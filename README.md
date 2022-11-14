@@ -4,7 +4,7 @@ This is a python-based web app served by Heroku at<br>
 https://impedance-match-app.herokuapp.com/
 
 The user manual and additional information is available at<br>
-https://impactswiki.net/impact-tools-book/intro.html
+https://impactswiki.net/impact-tools-book/
 
 This work supports the Planetary Impacts Community Wiki<br>
 https://impacts.wiki
