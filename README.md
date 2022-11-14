@@ -15,5 +15,5 @@ https://impacts.wiki
 * Code from https://github.com/sukhbinder/intersection/
 * Panel package https://panel.holoviz.org/
 
-S. T. Stewart
+S. T. Stewart<br>
 November 14, 2022
