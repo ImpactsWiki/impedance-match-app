@@ -1,0 +1,33 @@
+
+Basalt, Vacaville, R0 =  2.860 g/cc
+
+    m        U        D           P        R/R0      R         E-E0    Rem  Ref
+  1.000    2.100    5.880      35.315     1.556    4.4489      2.205    1    1
+  1.000    2.760    6.770      53.440     1.688    4.8285      3.809    1    1
+  1.000    3.240    7.590      70.332     1.745    4.9902      5.249    1    1
+  1.000    3.940    8.310      93.641     1.902    5.4386      7.762    1    1
+  1.000    4.250    9.190     111.705     1.860    5.3205      9.031    1    1
+  1.000    4.330    9.010     111.578     1.925    5.5061      9.374    1    1
+  1.000    4.640    9.910     131.510     1.880    5.3781     10.765    1    1
+  1.000    5.010   10.600     151.883     1.896    5.4233     12.550    1    1
+  1.000    5.200   10.630     158.089     1.958    5.5989     13.520    1    1
+  1.000    5.940   12.040     204.540     1.974    5.6450     17.642    1    1
+
+References:
+1. M. van Thiel (Ed.), Compendium of shock wave data, (Livermore: Lawrence
+   Livermore Laboratory Report UCRL-50108, 1977), 719-729
+
+Remarks:
+1. Grane size 0.3-0.003 mm
+
+Denotions:
+R0   - normal density of substance, g/cc
+R00  - initial density of sample, g/cc
+P0   - initial gas pressure (for gaseous substances only), GPa
+m    - porosity of sample
+U    - particle velocity, km/s
+D    - shock wave velocity, km/s
+P    - pressure behind shock front, GPa
+R/R0 - compression ratio behind shock front
+R    - density behind shock front, g/cc
+E-E0 - specific energy behind shock front, kJ/g
