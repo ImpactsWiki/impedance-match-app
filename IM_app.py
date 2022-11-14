@@ -307,7 +307,7 @@ def IM_app(matdata,imat,localdatabool=False):
                     userinfostr = userinfostr + '\n Using Hugoniot for reshock and release.'
                 else:
                     userinfostr = userinfostr + '\n Using Mie-Grueneisen model for reshock and release.'
-                winfo.value = 'Updated plot, impact vel (km/s)='+IM.ClStr(wvel)+userinfostr
+                winfo.value = 'Updated plot, impact vel (km/s)='+IM.ClStr(wvel)+userinfostr+' https://impactswiki.net/impact-tools-book/ https://github.com/ImpactsWiki/impedance-match-app'
                 #plt.show()
             return fig
         else:
