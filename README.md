@@ -14,3 +14,6 @@ https://impacts.wiki
 * Code from https://github.com/zixuanye/Russian_Shock_Database_Crawler
 * Code from https://github.com/sukhbinder/intersection/
 * Panel package https://panel.holoviz.org/
+
+S. T. Stewart
+November 14, 2022
