@@ -3,4 +3,5 @@ matplotlib
 pandas
 scipy
 panel
+jupyterlab
 
