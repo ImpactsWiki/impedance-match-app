@@ -46,7 +46,7 @@ def IM_app(webappbool=False):
     ab_materials = list(matdata.loc[:,'Material'].values)
     ab_materials.insert(0, 'Choose material')   # empty material at the top of the list
     bc_materials = list(matdata.loc[:,'Material'].values)
-    bc_materials.insert(0, 'Choose material/nomaterial')   # empty material at the top of the list
+    bc_materials.insert(0, 'Choose material / No material')   # empty material at the top of the list
 
     wmat1=pn.widgets.Select(
         name='Material 1',
