@@ -11,7 +11,8 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 import os
 #
-__version__ = '1.0.3' # November 13, 2022 Fixed symmetric impact bug; code cleanup and documentation.
+__version__ = '1.0.4' # November 14, 2022 Debugging.
+#__version__ = '1.0.3' # November 13, 2022 Fixed symmetric impact bug; code cleanup and documentation.
 #__version__ = '1.0.2' # November 12, 2022 Added Universal Liquid Hugoniot
 #__version__ = '1.0.1' # November 12, 2022 Added more graceful failure mores
 #
@@ -798,11 +799,16 @@ def ReadMaterials(matfilename='materials-data.csv'):
         matdata.rename(columns = {'s2(s/km)':'s2(s/m)'}, inplace = True)
     matdata.rename(columns = {'s2(s/km)':'s2(s/m)'}, inplace = True) # change column name to mks
     matdata.rename(columns = {'d(s/km)':'d(s/m)'}, inplace = True) # change column name to mks
-    matdata.iloc[:,imat.uplow] *= 0.001 # km/s to m/s
+    for iii in np.where(matdata.iloc[:,imat.uplow] != -1):
+        matdata.iloc[iii,imat.uplow] *= 1000 # km/s to m/s
     matdata.rename(columns = {'up_low(km/s)':'up_low(m/s)'}, inplace = True) # change column name to mks
-    matdata.iloc[:,imat.uphigh] *= 0.001 # km/s to m/s
+    for iii in np.where(matdata.iloc[:,imat.uphigh] != -1):
+        matdata.iloc[iii,imat.uphigh] *= 1000 # km/s to m/s
     matdata.rename(columns = {'up_high(km/s)':'up_high(m/s)'}, inplace = True) # change column name to mks
 
+    # convert date column to string
+    matdata['Date'] = matdata['Date'].astype(str)
+    matdata['Notes'] = matdata['Notes'].astype(str)
     return matdata, imat # DataFrame of csv file and MaterialIndices object that defines the columns of the DF
 
 #### INTERSECTION FUNCTION FROM https://github.com/sukhbinder/intersection/

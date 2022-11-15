@@ -7,7 +7,7 @@ import panel as pn
 # Required Impedance Match Calculation classes and functions for this app
 import IM_module as IM 
 
-def IM_app(matdata,imat,localdatabool=False):
+def IM_app(matdata,imat,localdatabool=False,webappbool=False):
     """ Shock Impedance Matching Tool and code. 
         Usage: IM_app(matdata,imat,localdatabool=False)
         Inputs: materials parameters DataFrame and database indices objects.
@@ -17,6 +17,7 @@ def IM_app(matdata,imat,localdatabool=False):
         Requires IM_module loaded as IM. Variables in MKS.
         v1.0.0 - November 12, 2022 - S.T.Stewart
         v1.0.1 - 11/13/22 STS code cleanup and documentation
+        v1.0.2 - 11/14/22 STS framing the app
     """
     #========================================================
     # WIDGET SETTINGS & CUSTOMIZATIONS
@@ -34,24 +35,26 @@ def IM_app(matdata,imat,localdatabool=False):
     menuwidth = 300 # pixel width for the left menu column
     #========================================================
 
-    all_materials = list(matdata.loc[:,'Material'].values)
-    all_materials.insert(0, 'Choose material/no material')   # empty material at the top of the list
+    ab_materials = list(matdata.loc[:,'Material'].values)
+    ab_materials.insert(0, 'Choose material')   # empty material at the top of the list
+    bc_materials = list(matdata.loc[:,'Material'].values)
+    bc_materials.insert(0, 'Choose material/nomaterial')   # empty material at the top of the list
 
     wmat1=pn.widgets.Select(
         name='Material 1',
-        options=all_materials,
+        options=ab_materials,
     )
     wmat2=pn.widgets.Select(
         name='Material 2',
-        options=all_materials,
+        options=ab_materials,
     )
     wmat3=pn.widgets.Select(
         name='Material 3',
-        options=all_materials,
+        options=bc_materials,
     )
     wmat4=pn.widgets.Select(
         name='Material 4',
-        options=all_materials,
+        options=bc_materials,
     )
 
     wpmax = pn.widgets.FloatInput(name='Set plot Pmax (GPa), 0 to autoscale', value=0,step=5, start=0)
@@ -67,16 +70,22 @@ def IM_app(matdata,imat,localdatabool=False):
         value=False,
         name='Use Hugoniot for release and reshock',
     )
+    wsavehtml = pn.widgets.Checkbox(
+        value=False,
+        name='Save html',
+    )
 
     winstruct = pn.widgets.StaticText(value='Enter image file name with extension (.pdf, .png)')
-
     wbutton = pn.widgets.Button(name='Save Plot', button_type='primary',width=100)
     wfilename = pn.widgets.TextInput(value=default_image_filename)
-    wsaveimage = pn.Column(wfilename,wbutton,width=menuwidth)
+    wsaveimage = pn.Column(winstruct,wfilename,wbutton,width=menuwidth)
 
     winfo = pn.widgets.StaticText(value='')
 
-    column1 = pn.Column('## Shock Impedance Match Tool\nSelect 2 or more materials and impact velocity', wmat1, wmat2, wmat3, wmat4, wshowdata, wusehugoniot, wvel, wpmax, winstruct, wsaveimage, winfo, width=menuwidth)#, background='WhiteSmoke')
+    if webappbool:
+        column1 = pn.Column('## Shock Impedance Match Tool\nSelect 2 or more materials and impact velocity', wmat1, wmat2, wmat3, wmat4, wshowdata, wusehugoniot, wvel, wpmax, winfo, width=menuwidth)#, background='WhiteSmoke')
+    else:
+        column1 = pn.Column('## Shock Impedance Match Tool\nSelect 2 or more materials and impact velocity', wmat1, wmat2, wmat3, wmat4, wshowdata, wusehugoniot, wvel, wpmax, wsaveimage, winfo, width=menuwidth)#, background='WhiteSmoke')
 
 
     def plot(wvel):
@@ -147,9 +156,9 @@ def IM_app(matdata,imat,localdatabool=False):
                 return
 
             fig = plt.figure()
-            def on_button_clicked(b):
-                fig.savefig(wfilename.value,bbox_inches='tight',dpi=300)
-            wbutton.on_click(on_button_clicked)
+            #def on_button_clicked(b):
+            #    fig.savefig(wfilename.value,bbox_inches='tight',dpi=300)
+            #wbutton.on_click(on_button_clicked)
 
             # SOLVE FOR FIRST IM STATE: mat1--> mat2 at vel
             if len(id1) >0 and len(id2)>0:
@@ -275,7 +284,7 @@ def IM_app(matdata,imat,localdatabool=False):
                         # reshock
                         mat3.MakeReshockHug(mat3.im1,useHugoniotbool=wusehugoniot.value)
                         res3 = IM.Intersection(up,mat4.hug.parr,mat3.reshock.uparr,mat3.reshock.parr)
-                        print('Reshock res3=',res3[0])
+                        #print('Reshock res3=',res3[0])
                         mat3.im2.up=res3[0][0] # m/s
                         mat3.im2.p=res3[1][0] # Pa
                         mat3.im2.v=1./(np.interp(res3[0],up,1./mat3.reshock.varr)[0]) # assumes f is monotonic and increasing
@@ -307,18 +316,36 @@ def IM_app(matdata,imat,localdatabool=False):
                     userinfostr = userinfostr + '\n Using Hugoniot for reshock and release.'
                 else:
                     userinfostr = userinfostr + '\n Using Mie-Grueneisen model for reshock and release.'
-                winfo.value = 'Updated plot, impact vel (km/s)='+IM.ClStr(wvel)+userinfostr+' https://impactswiki.net/impact-tools-book/ https://github.com/ImpactsWiki/impedance-match-app'
+                winfo.value = 'Updated plot, impact vel (km/s)='+IM.ClStr(wvel)+userinfostr
                 #plt.show()
             return fig
         else:
             winfo.value = 'No plot. Impact velocity <= 0'
 
+
     out=pn.bind(plot,wvel=wvel)
-    return pn.Row(column1,out,width=1200)
+    # create header and footer information to make the standalone app look nice
+    #wbutton.on_click(out.save('test.pdf'))
+    #test = pn.Row(column1,out,width=1200)
+    #wbutton.on_click(test.save('test.pdf'))
+
+    wbottomtext = pn.widgets.StaticText(value='<b>Manual</b> <a href="https://impactswiki.net/impact-tools-book/">https://impactswiki.net/impact-tools-book/</a>')
+    df_widget = pn.widgets.Tabulator(matdata)
+    wtemptext = pn.widgets.StaticText(value='in the queue....')
+    wauthortext = pn.widgets.StaticText(value='S. T. Stewart, 2022')
+
+    top_pane = pn.pane.PNG('PetaviusLangrenus_Poupeau_3000.png', link_url="https://impacts.wiki", width=1200)
+    middle_pane = pn.Row(column1,out,width=1200)
+    matdata_pane = pn.Card(df_widget, title="Materials Database", sizing_mode='stretch_width', collapsed=True)
+    addmat_pane = pn.Card(wtemptext, title="Add Material", sizing_mode='stretch_width', collapsed=True)
+    
+    combo_pane = pn.Column(top_pane,middle_pane,wbottomtext,matdata_pane,addmat_pane,pn.layout.Divider(),wauthortext,width=1200)
+
+    return combo_pane
 
 ## this function creates a panel app that can be run as a standalone app in a web browser using
-## myapp = IM_app(matdata,imat)
-## myapp.servable() # run the widget alone in a web browser using command line: bokeh serve --show filename.ipynb
+## IM_app(matdata,imat)
+## use IM_app.servable() to run the widget alone in a web browser using command line: bokeh serve --show filename.ipynb
 ## see https://panel.holoviz.org/index.html
 ### END of IM_app.py ###
     
