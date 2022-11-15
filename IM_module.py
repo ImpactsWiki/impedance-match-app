@@ -38,7 +38,7 @@ class MaterialIndices:
         self.uphigh=0
         self.ihed=0
         self.date=0
-        self.ref=0
+        self.note=0
 class EOS_Line:
     """Class for EOS line (Hugoniot, isentrope, reshock Hugoniot)"""
     def __init__(self):
@@ -84,7 +84,6 @@ class Material:
     def __init__(self):
         """Initialize material class for impedance matching calculations."""
         self.name = ''
-        self.ref  = ''
         self.note = ''
         self.rho0 = 0. # initial density kg/m3
         self.v0   = 0. # initial specific volume = 1/rho0
@@ -103,9 +102,9 @@ class Material:
         self.reshock = EOS_Line() # Reshock Hugoniot
         self.ihed    = IHED() # structure to store IHED data for this material
         self.ihed2   = IHED() # structure to store a second group of IHED or user data for this material
-    def DefineParams(self,name,rho0,c0,s1,s2,d,g0,q,ihednum,ref):
+    def DefineParams(self,name,rho0,c0,s1,s2,d,g0,q,ihednum,note):
         """ Initialize material parameters with manual parameter input.
-            Usage: DefineParams(self,name,rho0,c0,s1,s2,d,g0,q,ihednum,ref):
+            Usage: DefineParams(self,name,rho0,c0,s1,s2,d,g0,q,ihednum,note):
         """
         self.name = name # material name string
         self.rho0 = rho0 # kg/m3
@@ -117,7 +116,7 @@ class Material:
         self.g0   = g0 # [-]
         self.q    = q # [-]        
         self.ihed.id  = int(ihednum) # [integer] -1 indicates no data in IHED
-        self.ref  = ref # string with user comment on sources for parameters
+        self.note  = note # string with user comment on sources for parameters
     def DefineParamsID(self,matdatstr,matdata,imat):
         """ Initialize material parameters from using values from material database file.
             Usage: DefineParamsID(self,matdatstr,matdata,imat):
@@ -137,7 +136,7 @@ class Material:
             self.g0       = matdata.iloc[idx[0],imat.g0] # [-]
             self.q        = matdata.iloc[idx[0],imat.q] # [-]        
             self.ihed.id  = int(matdata.iloc[idx[0],imat.ihed]) # [integer] -1 indicates no data in IHED
-            self.ref      = matdata.iloc[idx[0],imat.ref] # string with parameter source information
+            self.note     = matdata.iloc[idx[0],imat.note] # string with parameter source information
         else:
             print('WARNING: Cannot find this material in the database: ',matdatstr)
     def GetIHED(self,formflag=1,upmin=0.,upmax=1E99,id2=-1,moredata=[-1],uselocalbool=False):
@@ -766,7 +765,7 @@ def ReadMaterials(matfilename='materials-data.csv'):
        Output: 2 objects: DataFrame and DF index structure.
        To view the output: display(matdata) and vars(imat)
     """
-    print('Reading materials data file and converting to mks: ',matfilename)
+    #print('Reading materials data file and converting to mks: ',matfilename)
     matdata=pd.read_csv(matfilename) 
 
     # assign column indices for material property variables [so it is easier to change the materials file format]
@@ -784,7 +783,7 @@ def ReadMaterials(matfilename='materials-data.csv'):
     imat.uphigh=16
     imat.ihed=17
     imat.date=18
-    imat.ref=19
+    imat.note=19
 
     # convert to MKS because everything is better in one unit system
     matdata.iloc[:,imat.rho0] *= 1000. # g/cm3 to kg/m3

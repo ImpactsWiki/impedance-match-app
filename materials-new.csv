@@ -1,0 +1,2 @@
+﻿Material,Density(g/cm3),rho0_err,c0(km/s),c0_err,s1,s1_err,s2(s/km),s2_err,d(s/km),d_err,g0,g0_err,q,q_err,up_low(km/s),up_high(km/s),IHED_id,Date,Notes
+New,0.,-1,0.,-1,0.,-1,0.,-1,0.,0.,1.0,-1,1.0,-1,-1,-1,-1,2022-11-15,New material blank template
