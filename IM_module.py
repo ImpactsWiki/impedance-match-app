@@ -299,7 +299,7 @@ class Material:
                             clean_response=''
                     else:
                         # read in the local copy
-                        print('reading in local copy of IHED table #',id2)
+                        #print('reading in local copy of IHED table #',id2)
                         with open(ihedfname) as fp:
                             li = fp.readlines() # this is a list for each line
                             #print(li)

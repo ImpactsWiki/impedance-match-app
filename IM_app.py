@@ -306,7 +306,7 @@ def IM_app(matdata,imat,webappbool=False):
 
                 plt.title(string1+string2+string3+string4)            
                 plt.legend(bbox_to_anchor=(1,1), loc="upper left") #bbox_to_anchor=(1.05, 1)
-                plt.xlabel('Particle Velocity (km/s)')
+                plt.xlabel('Particle Velocity (km/s)\nhttps://impactswiki.net/impact-tools-book/')
                 plt.ylabel('Pressure (GPa)')
                 if wpmax.value > 0: # don't use negative values
                     plt.ylim(0,wpmax.value)
@@ -319,7 +319,7 @@ def IM_app(matdata,imat,webappbool=False):
                 else:
                     userinfostr = userinfostr + '<br> Using Mie-Grueneisen model for reshock and release.'
                 winfo.value = 'Updated plot, impact vel (km/s)='+IM.ClStr(wvel)+userinfostr
-                #plt.show()
+                plt.close(fig)
             return fig
         else:
             winfo.value = 'No plot. Impact velocity <= 0'
@@ -327,7 +327,7 @@ def IM_app(matdata,imat,webappbool=False):
 
     out=pn.bind(plot,wvel=wvel) # link the velocity widget to the plot function
 
-    wbottomtext = pn.widgets.StaticText(value='<b>Manual</b> <a href="https://impactswiki.net/impact-tools-book/">https://impactswiki.net/impact-tools-book/</a>')
+    wbottomtext = pn.widgets.StaticText(value='<b>Manual</b> <a href="https://impactswiki.net/impact-tools-book/">https://impactswiki.net/impact-tools-book/</a><br><b>Repo</b> <a href="https://github.com/ImpactsWiki/impedance-match-app">https://github.com/ImpactsWiki/impedance-match-app<br>If crashing or unresponsive, use Hugoniot for release and reshock.')
     df_widget = pn.widgets.Tabulator(matdata)
     wtemptext = pn.widgets.StaticText(value='in the queue....')
     wauthortext = pn.widgets.StaticText(value='S. T. Stewart, 2022')
@@ -338,7 +338,7 @@ def IM_app(matdata,imat,webappbool=False):
     addmat_pane = pn.Card(wtemptext, title="Add Material", sizing_mode='scale_width', collapsed=True)
     
     combo_pane = pn.Column(top_pane,main_pane,wbottomtext,matdata_pane,addmat_pane,pn.layout.Divider(),wauthortext,width=1200,sizing_mode="scale_width")
-
+    
     return combo_pane
 
 ## this function creates a panel app that can be run as a standalone app in a web browser using
