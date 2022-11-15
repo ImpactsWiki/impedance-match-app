@@ -85,9 +85,9 @@ def IM_app(matdata,imat,webappbool=False):
     #end group
 
     if webappbool:
-        column1 = pn.Column('## Shock Impedance Match Tool\nSelect 2 or more materials and impact velocity', wmat1, wmat2, wmat3, wmat4, wshowdata, wuselocaldata, wusehugoniot, wvel, wpmax, winfo, width=menuwidth)#, background='WhiteSmoke')
+        column1 = pn.Column('## Shock Impedance Match Tool\nSelect 2 or more materials and impact velocity', wmat1, wmat2, wmat3, wmat4, wvel, wshowdata, wuselocaldata, wusehugoniot, wpmax, winfo, width=menuwidth)#, background='WhiteSmoke')
     else:
-        column1 = pn.Column('## Shock Impedance Match Tool\nSelect 2 or more materials and impact velocity', wmat1, wmat2, wmat3, wmat4, wshowdata, wuselocaldata, wusehugoniot, wvel, wpmax, wsaveimage, winfo, width=menuwidth)#, background='WhiteSmoke')
+        column1 = pn.Column('## Shock Impedance Match Tool\nSelect 2 or more materials and impact velocity', wmat1, wmat2, wmat3, wmat4, wvel, wshowdata, wuselocaldata, wusehugoniot, wpmax, wsaveimage, winfo, width=menuwidth)#, background='WhiteSmoke')
 
 
     def plot(wvel):
