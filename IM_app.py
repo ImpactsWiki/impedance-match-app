@@ -18,7 +18,7 @@ def IM_app(webappbool=False):
         v1.0.0 - November 12, 2022 - S.T.Stewart
         v1.0.1 - 11/13/22 STS code cleanup and documentation
         v1.0.2 - 11/14/22 STS framing the app
-        v1.0.3 - 11/15/22 STS auto-resize the plot
+        v1.0.3 - 11/15/22 STS auto-resize the plot; added panel to add a new material
     """
     #========================================================
     # WIDGET SETTINGS & CUSTOMIZATIONS
@@ -70,7 +70,7 @@ def IM_app(webappbool=False):
 
     wpmax = pn.widgets.FloatInput(name='Set plot Pmax (GPa), 0 to autoscale', value=0,step=5, start=0,width=int(menuwidth/2))
 
-    wvel = pn.widgets.FloatInput(name='Impact Velocity (km/s) - change to update plot', value=0, step=1e-1, start=0, end=100)
+    wvel = pn.widgets.FloatInput(name='Impact Velocity (km/s)', value=0, step=1e-1, start=0, end=100)
 
     wshowdata = pn.widgets.Checkbox(
         value=False,
@@ -95,12 +95,14 @@ def IM_app(webappbool=False):
     #end group
 
     if webappbool:
-        wcolumn1 = pn.Column('## Shock Impedance Match Tool\nSelect 2 or more materials and impact velocity', wmat1, wmat2, wmat3, wmat4, wvel, wshowdata, wuselocaldata, wusehugoniot, wpmax, winfo, width=menuwidth)
+        wcolumn1 = pn.Column('## Shock Impedance Match Tool\nSelect 2 or more materials and impact velocity.<br>Changing impact velocity updates the plot.', wmat1, wmat2, wmat3, wmat4, wvel, wshowdata, wuselocaldata, wusehugoniot, wpmax, winfo, width=menuwidth)
     else:
-        wcolumn1 = pn.Column('## Shock Impedance Match Tool\nSelect 2 or more materials and impact velocity', wmat1, wmat2, wmat3, wmat4, wvel, wshowdata, wuselocaldata, wusehugoniot, wpmax, wsaveimage, winfo, width=menuwidth)
+        wcolumn1 = pn.Column('## Shock Impedance Match Tool\nSelect 2 or more materials and impact velocity<br>Changing impact velocity updates the plot.', wmat1, wmat2, wmat3, wmat4, wvel, wshowdata, wuselocaldata, wusehugoniot, wpmax, wsaveimage, winfo, width=menuwidth)
 
-    @pn.depends(vel=wvel)
-    def plot(vel):
+    @pn.depends(vel=wvel,usehugoniot=wusehugoniot,showdata=wshowdata)
+    def plot(vel,usehugoniot,showdata): 
+        # usehugoniot and showdata are function parameters to trigger redraw of plot
+        # the code below accesses the widget values directly
         vel = vel*1.e3 # put impact velocity in m/s
         userinfostr=''
         if vel > 0:
@@ -329,8 +331,7 @@ def IM_app(webappbool=False):
                     userinfostr = userinfostr + '<br> Using Hugoniot for reshock and release.'
                 else:
                     userinfostr = userinfostr + '<br> Using Mie-Grueneisen model for reshock and release.'
-#                winfo.value = 'Updated plot, impact vel (km/s)='+IM.ClStr(wvel)+userinfostr
-                winfo.value = 'Updated plot, impact vel (km/s)='+IM.ClStr(vel)+userinfostr
+                winfo.value = 'Updated plot, impact vel (km/s)='+IM.ClStr(vel/1.e3)+userinfostr
                 plt.close(fig)
             return fig
         else:
@@ -344,10 +345,10 @@ def IM_app(webappbool=False):
     # display current matdata DataFrame
     wdf_widget = pn.widgets.Tabulator(matdata)
     # entry boxes for new material parameters
-    waddmattext = pn.widgets.StaticText(value='Enter values for new material in MKS. <a href="http://www.ihed.ras.ru/rusbank/substsearch.php" target="_blank">OPEN IHED Database to find material number</a>; enter -1 if not available. The substance ID number is given in the web page address when plotting the Hugoniot or displaying the data as plain text.<p> 2, 3, or 4 parameters define the form of the Hugoniot:<br>2=Linear: Us = c0 + s1*up<br>3=Quadratic: Us = c0 + s1*up + s2*up^2<br>4=Mod. Universal Liquid: Us = c0 + s1*up - c*up*exp(-d*up)<p>Mie-Grueneisen parameter: g(v) = g0*(v/v0)^q')
+    waddmattext = pn.widgets.StaticText(value='Enter values for new material in MKS. <a href="http://www.ihed.ras.ru/rusbank/substsearch.php" target="_blank">Search the IHED Database to find the material number</a>; enter -1 if not available. The substance ID number is given in the web page address when plotting the Hugoniot or displaying the data as plain text.<p> 2, 3, or 4 non-zero parameters define the form of the Hugoniot:<br>2=Linear: Us = c0 + s1*up<br>3=Quadratic: Us = c0 + s1*up + s2*up^2<br>4=Mod. Universal Liquid: Us = c0 + s1*up - c*up*exp(-d*up)<p>Mie-Grueneisen parameter: g(v) = g0*(v/v0)^q')
     if webappbool:
-        waddmattext.value = "Changes to materials database will be lost upon refreshing this webb app.<p>"+waddmattext.value
-    wnewname = pn.widgets.TextInput(name='New Material Name')
+        waddmattext.value = 'Changes to materials database will be lost upon refreshing this web app. <a href="https://impactswiki.net/impact-tools-book/" target="_blank">Use the Jupyter Notebook version</a> to access a personal database.<p>'+waddmattext.value
+    wnewname = pn.widgets.TextInput(name='New Material Name',value='Enter Name')
     wrho0 = pn.widgets.FloatInput(name='Density [kg/m^3]', page_step_multiplier=1)
     wc0 = pn.widgets.FloatInput(name='c0 [m/s]', page_step_multiplier=1)
     ws1 = pn.widgets.FloatInput(name='s1 [-]', page_step_multiplier=1)
@@ -356,9 +357,11 @@ def IM_app(webappbool=False):
     wg0 = pn.widgets.FloatInput(name='g0 [-]', value=1., page_step_multiplier=1)
     wq = pn.widgets.FloatInput(name='q [-]', value=1., page_step_multiplier=1)
     wihed = pn.widgets.IntInput(name='IHED substance id number [int]', value=-1, page_step_multiplier=1)
-    wnote = pn.widgets.TextInput(name='Note', value='Add reference for material parameters.')
+    wdate = pn.widgets.TextInput(name='Date', value='YYYY-MM-DD')
+    
+    wnote = pn.widgets.TextInput(name='Note', value='Enter reference for material parameters.')
     waddmatbutton = pn.widgets.Button(name='Add material to database', button_type='primary')
-    wnewparams = pn.Column(waddmattext,wnewname,wrho0,wc0,ws1,ws2,wd,wg0,wq,wihed,wnote,waddmatbutton,width=500)
+    wnewparams = pn.Column(waddmattext,wnewname,wrho0,wc0,ws1,ws2,wd,wg0,wq,wihed,wdate,wnote,waddmatbutton,width=500)
     
     @pn.depends(wmat1,wmat2,wmat3,wmat4)
     def on_addmatbutton_clicked(event):
@@ -377,6 +380,7 @@ def IM_app(webappbool=False):
         newmatdata.iloc[:,imat.g0] = wg0.value
         newmatdata.iloc[:,imat.q] = wq.value
         newmatdata.iloc[:,imat.ihed] = wihed.value
+        newmatdata.iloc[:,imat.date] = wdate.value
         newmatdata.iloc[:,imat.note] = wnote.value
         matdata = pd.concat([newmatdata,matdata],ignore_index=True)
         wdf_widget.value = matdata
