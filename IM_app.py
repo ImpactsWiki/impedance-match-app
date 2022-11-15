@@ -7,9 +7,9 @@ import panel as pn
 # Required Impedance Match Calculation classes and functions for this app
 import IM_module as IM 
 
-def IM_app(matdata,imat,localdatabool=False,webappbool=False):
+def IM_app(matdata,imat,webappbool=False):
     """ Shock Impedance Matching Tool and code. 
-        Usage: IM_app(matdata,imat,localdatabool=False)
+        Usage: IM_app(matdata,imat,webappbool=False)
         Inputs: materials parameters DataFrame and database indices objects.
                 Optional boolean to use local copy of IHED in subdirectory database-ihed.
                 If material not local, will fetch from IHED web site and save a local copy.
@@ -30,7 +30,8 @@ def IM_app(matdata,imat,localdatabool=False,webappbool=False):
     # widget splash image and default save file name
     default_image_filename = 'Impact-solution.pdf'
     #
-    plt.rcParams["figure.figsize"] = (8,6)
+    plt.rcParams["figure.figsize"] = (9,6)
+    plt.rcParams["figure.dpi"] = 100
     plt.rc('font', size=10)
     menuwidth = 300 # pixel width for the left menu column
     #========================================================
@@ -65,27 +66,28 @@ def IM_app(matdata,imat,localdatabool=False,webappbool=False):
         value=False,
         name='Show IHED data (takes a minute)',
     )
-
+    wuselocaldata = pn.widgets.Checkbox(
+        value=False,
+        name='Use/save local IHED data',
+    )
     wusehugoniot = pn.widgets.Checkbox(
         value=False,
         name='Use Hugoniot for release and reshock',
     )
-    wsavehtml = pn.widgets.Checkbox(
-        value=False,
-        name='Save html',
-    )
 
+    winfo = pn.widgets.StaticText(value='')
+
+    # group to save PDF file when running in a Jupyter notebook ; does not work in Heroku web app
     winstruct = pn.widgets.StaticText(value='Enter image file name with extension (.pdf, .png)')
     wbutton = pn.widgets.Button(name='Save Plot', button_type='primary',width=100)
     wfilename = pn.widgets.TextInput(value=default_image_filename)
     wsaveimage = pn.Column(winstruct,wfilename,wbutton,width=menuwidth)
-
-    winfo = pn.widgets.StaticText(value='')
+    #end group
 
     if webappbool:
-        column1 = pn.Column('## Shock Impedance Match Tool\nSelect 2 or more materials and impact velocity', wmat1, wmat2, wmat3, wmat4, wshowdata, wusehugoniot, wvel, wpmax, winfo, width=menuwidth)#, background='WhiteSmoke')
+        column1 = pn.Column('## Shock Impedance Match Tool\nSelect 2 or more materials and impact velocity', wmat1, wmat2, wmat3, wmat4, wshowdata, wuselocaldata, wusehugoniot, wvel, wpmax, winfo, width=menuwidth)#, background='WhiteSmoke')
     else:
-        column1 = pn.Column('## Shock Impedance Match Tool\nSelect 2 or more materials and impact velocity', wmat1, wmat2, wmat3, wmat4, wshowdata, wusehugoniot, wvel, wpmax, wsaveimage, winfo, width=menuwidth)#, background='WhiteSmoke')
+        column1 = pn.Column('## Shock Impedance Match Tool\nSelect 2 or more materials and impact velocity', wmat1, wmat2, wmat3, wmat4, wshowdata, wuselocaldata, wusehugoniot, wvel, wpmax, wsaveimage, winfo, width=menuwidth)#, background='WhiteSmoke')
 
 
     def plot(wvel):
@@ -116,9 +118,9 @@ def IM_app(matdata,imat,localdatabool=False,webappbool=False):
                 mat1.DefineParamsID(wmat1.value,matdata,imat)
                 mat1.MakeHugoniot(up)
                 if mat1.s2 != 0 and mat1.d == 0:
-                    userinfostr=userinfostr+'\n WARNING: '+mat1.name+' Hugoniot is quadratic.'
+                    userinfostr=userinfostr+'<br> WARNING: '+mat1.name+' Hugoniot is quadratic.'
                 if wshowdata.value:
-                    mat1.GetIHED(uselocalbool=localdatabool)
+                    mat1.GetIHED(uselocalbool=wuselocaldata.value)
 
             id2 = np.where(matdata.loc[:,'Material'].values == wmat2.value)[0]
             if len(id2)>0:
@@ -126,9 +128,9 @@ def IM_app(matdata,imat,localdatabool=False,webappbool=False):
                 mat2.DefineParamsID(wmat2.value,matdata,imat)
                 mat2.MakeHugoniot(up)
                 if mat2.s2 != 0 and mat2.d == 0:
-                    userinfostr=userinfostr+'\n WARNING: '+mat2.name+' Hugoniot is quadratic.'
+                    userinfostr=userinfostr+'<br> WARNING: '+mat2.name+' Hugoniot is quadratic.'
                 if wshowdata.value:
-                    mat2.GetIHED(uselocalbool=localdatabool)
+                    mat2.GetIHED(uselocalbool=wuselocaldata.value)
 
             id3 = np.where(matdata.loc[:,'Material'].values == wmat3.value)[0]
             if len(id3)>0:
@@ -136,9 +138,9 @@ def IM_app(matdata,imat,localdatabool=False,webappbool=False):
                 mat3.DefineParamsID(wmat3.value,matdata,imat)
                 mat3.MakeHugoniot(up)
                 if mat3.s2 != 0 and mat3.d == 0:
-                    userinfostr=userinfostr+'\n WARNING: '+mat3.name+' Hugoniot is quadratic.'
+                    userinfostr=userinfostr+'<br> WARNING: '+mat3.name+' Hugoniot is quadratic.'
                 if wshowdata.value:
-                    mat3.GetIHED(uselocalbool=localdatabool)
+                    mat3.GetIHED(uselocalbool=wuselocaldata.value)
 
             id4 = np.where(matdata.loc[:,'Material'].values == wmat4.value)[0]
             if len(id4)>0:
@@ -146,9 +148,9 @@ def IM_app(matdata,imat,localdatabool=False,webappbool=False):
                 mat4.DefineParamsID(wmat4.value,matdata,imat)
                 mat4.MakeHugoniot(up)
                 if mat4.s2 != 0 and mat4.d == 0:
-                    userinfostr=userinfostr+'\n WARNING: '+mat4.name+' Hugoniot is quadratic.'
+                    userinfostr=userinfostr+'<br> WARNING: '+mat4.name+' Hugoniot is quadratic.'
                 if wshowdata.value:
-                    mat4.GetIHED(uselocalbool=localdatabool)
+                    mat4.GetIHED(uselocalbool=wuselocaldata.value)
 
             # check that at least 2 materials have been defined
             if len(id1)==0 or len(id2)==0:
@@ -313,9 +315,9 @@ def IM_app(matdata,imat,localdatabool=False,webappbool=False):
                 plt.xlim(0,upmaxfactor*vel/1.e3)
                 plt.tight_layout()
                 if wusehugoniot.value:
-                    userinfostr = userinfostr + '\n Using Hugoniot for reshock and release.'
+                    userinfostr = userinfostr + '<br> Using Hugoniot for reshock and release.'
                 else:
-                    userinfostr = userinfostr + '\n Using Mie-Grueneisen model for reshock and release.'
+                    userinfostr = userinfostr + '<br> Using Mie-Grueneisen model for reshock and release.'
                 winfo.value = 'Updated plot, impact vel (km/s)='+IM.ClStr(wvel)+userinfostr
                 #plt.show()
             return fig
@@ -323,23 +325,19 @@ def IM_app(matdata,imat,localdatabool=False,webappbool=False):
             winfo.value = 'No plot. Impact velocity <= 0'
 
 
-    out=pn.bind(plot,wvel=wvel)
-    # create header and footer information to make the standalone app look nice
-    #wbutton.on_click(out.save('test.pdf'))
-    #test = pn.Row(column1,out,width=1200)
-    #wbutton.on_click(test.save('test.pdf'))
+    out=pn.bind(plot,wvel=wvel) # link the velocity widget to the plot function
 
     wbottomtext = pn.widgets.StaticText(value='<b>Manual</b> <a href="https://impactswiki.net/impact-tools-book/">https://impactswiki.net/impact-tools-book/</a>')
     df_widget = pn.widgets.Tabulator(matdata)
     wtemptext = pn.widgets.StaticText(value='in the queue....')
     wauthortext = pn.widgets.StaticText(value='S. T. Stewart, 2022')
 
-    top_pane = pn.pane.PNG('PetaviusLangrenus_Poupeau_3000.png', link_url="https://impacts.wiki", width=1200)
-    middle_pane = pn.Row(column1,out,width=1200)
-    matdata_pane = pn.Card(df_widget, title="Materials Database", sizing_mode='stretch_width', collapsed=True)
-    addmat_pane = pn.Card(wtemptext, title="Add Material", sizing_mode='stretch_width', collapsed=True)
+    top_pane = pn.pane.PNG('PetaviusLangrenus_Poupeau_3000.png',link_url="https://impacts.wiki",sizing_mode="scale_width")
+    main_pane = pn.Row(column1,out,sizing_mode="scale_width")
+    matdata_pane = pn.Card(df_widget, title="Materials Database", sizing_mode='scale_width', collapsed=True)
+    addmat_pane = pn.Card(wtemptext, title="Add Material", sizing_mode='scale_width', collapsed=True)
     
-    combo_pane = pn.Column(top_pane,middle_pane,wbottomtext,matdata_pane,addmat_pane,pn.layout.Divider(),wauthortext,width=1200)
+    combo_pane = pn.Column(top_pane,main_pane,wbottomtext,matdata_pane,addmat_pane,pn.layout.Divider(),wauthortext,width=1200,sizing_mode="scale_width")
 
     return combo_pane
 
