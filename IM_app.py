@@ -327,7 +327,7 @@ def IM_app(matdata,imat,webappbool=False):
 
     out=pn.bind(plot,wvel=wvel) # link the velocity widget to the plot function
 
-    wbottomtext = pn.widgets.StaticText(value='<b>Manual</b> <a href="https://impactswiki.net/impact-tools-book/">https://impactswiki.net/impact-tools-book/</a><br><b>Repo</b> <a href="https://github.com/ImpactsWiki/impedance-match-app">https://github.com/ImpactsWiki/impedance-match-app<br>If crashing or unresponsive, use Hugoniot for release and reshock.')
+    wbottomtext = pn.widgets.StaticText(value='<b>Manual</b> <a href="https://impactswiki.net/impact-tools-book/">https://impactswiki.net/impact-tools-book/</a><br><b>Repo</b> <a href="https://github.com/ImpactsWiki/impedance-match-app">https://github.com/ImpactsWiki/impedance-match-app</a><br>If crashing or unresponsive, use Hugoniot for release and reshock.')
     df_widget = pn.widgets.Tabulator(matdata)
     wtemptext = pn.widgets.StaticText(value='in the queue....')
     wauthortext = pn.widgets.StaticText(value='S. T. Stewart, 2022')
