@@ -18,6 +18,7 @@ def IM_app(matdata,imat,webappbool=False):
         v1.0.0 - November 12, 2022 - S.T.Stewart
         v1.0.1 - 11/13/22 STS code cleanup and documentation
         v1.0.2 - 11/14/22 STS framing the app
+        v1.0.3 - 11/15/22 STS auto-resize the plot
     """
     #========================================================
     # WIDGET SETTINGS & CUSTOMIZATIONS
@@ -35,6 +36,7 @@ def IM_app(matdata,imat,webappbool=False):
     plt.rc('font', size=10)
     menuwidth = 300 # pixel width for the left menu column
     #========================================================
+    # w* variables are widgets
 
     ab_materials = list(matdata.loc[:,'Material'].values)
     ab_materials.insert(0, 'Choose material')   # empty material at the top of the list
@@ -58,7 +60,7 @@ def IM_app(matdata,imat,webappbool=False):
         options=bc_materials,
     )
 
-    wpmax = pn.widgets.FloatInput(name='Set plot Pmax (GPa), 0 to autoscale', value=0,step=5, start=0)
+    wpmax = pn.widgets.FloatInput(name='Set plot Pmax (GPa), 0 to autoscale', value=0,step=5, start=0,width=int(menuwidth/2))
 
     wvel = pn.widgets.FloatInput(name='Impact Velocity (km/s) - change to update plot', value=0, step=1e-1, start=0, end=100)
 
@@ -85,13 +87,13 @@ def IM_app(matdata,imat,webappbool=False):
     #end group
 
     if webappbool:
-        column1 = pn.Column('## Shock Impedance Match Tool\nSelect 2 or more materials and impact velocity', wmat1, wmat2, wmat3, wmat4, wvel, wshowdata, wuselocaldata, wusehugoniot, wpmax, winfo, width=menuwidth)#, background='WhiteSmoke')
+        wcolumn1 = pn.Column('## Shock Impedance Match Tool\nSelect 2 or more materials and impact velocity', wmat1, wmat2, wmat3, wmat4, wvel, wshowdata, wuselocaldata, wusehugoniot, wpmax, winfo, width=menuwidth)#, background='WhiteSmoke')
     else:
-        column1 = pn.Column('## Shock Impedance Match Tool\nSelect 2 or more materials and impact velocity', wmat1, wmat2, wmat3, wmat4, wvel, wshowdata, wuselocaldata, wusehugoniot, wpmax, wsaveimage, winfo, width=menuwidth)#, background='WhiteSmoke')
+        wcolumn1 = pn.Column('## Shock Impedance Match Tool\nSelect 2 or more materials and impact velocity', wmat1, wmat2, wmat3, wmat4, wvel, wshowdata, wuselocaldata, wusehugoniot, wpmax, wsaveimage, winfo, width=menuwidth)#, background='WhiteSmoke')
 
-
-    def plot(wvel):
-        vel = wvel*1.e3 # put impact velocity in m/s
+    @pn.depends(vel=wvel)
+    def plot(vel):
+        vel = vel*1.e3 # put impact velocity in m/s
         userinfostr=''
         if vel > 0:
             #print('INCLUDES Mie-Gruneisen Release or Reshock for Material 2.')
@@ -158,9 +160,9 @@ def IM_app(matdata,imat,webappbool=False):
                 return
 
             fig = plt.figure()
-            #def on_button_clicked(b):
-            #    fig.savefig(wfilename.value,bbox_inches='tight',dpi=300)
-            #wbutton.on_click(on_button_clicked)
+            def on_button_clicked(b):
+                fig.savefig(wfilename.value,bbox_inches='tight',dpi=300)
+            wbutton.on_click(on_button_clicked)
 
             # SOLVE FOR FIRST IM STATE: mat1--> mat2 at vel
             if len(id1) >0 and len(id2)>0:
@@ -318,28 +320,28 @@ def IM_app(matdata,imat,webappbool=False):
                     userinfostr = userinfostr + '<br> Using Hugoniot for reshock and release.'
                 else:
                     userinfostr = userinfostr + '<br> Using Mie-Grueneisen model for reshock and release.'
-                winfo.value = 'Updated plot, impact vel (km/s)='+IM.ClStr(wvel)+userinfostr
+#                winfo.value = 'Updated plot, impact vel (km/s)='+IM.ClStr(wvel)+userinfostr
+                winfo.value = 'Updated plot, impact vel (km/s)='+IM.ClStr(vel)+userinfostr
                 plt.close(fig)
             return fig
         else:
             winfo.value = 'No plot. Impact velocity <= 0'
 
-
-    out=pn.bind(plot,wvel=wvel) # link the velocity widget to the plot function
+    wplot=pn.panel(plot, sizing_mode='scale_width') # panel to display the impedance match plot
 
     wbottomtext = pn.widgets.StaticText(value='<b>Manual</b> <a href="https://impactswiki.net/impact-tools-book/">https://impactswiki.net/impact-tools-book/</a><br><b>Repo</b> <a href="https://github.com/ImpactsWiki/impedance-match-app">https://github.com/ImpactsWiki/impedance-match-app</a><br>If crashing or unresponsive, use Hugoniot for release and reshock.')
-    df_widget = pn.widgets.Tabulator(matdata)
+    wdf_widget = pn.widgets.Tabulator(matdata)
     wtemptext = pn.widgets.StaticText(value='in the queue....')
     wauthortext = pn.widgets.StaticText(value='S. T. Stewart, 2022')
 
-    top_pane = pn.pane.PNG('PetaviusLangrenus_Poupeau_3000.png',link_url="https://impacts.wiki",sizing_mode="scale_width")
-    main_pane = pn.Row(column1,out,sizing_mode="scale_width")
-    matdata_pane = pn.Card(df_widget, title="Materials Database", sizing_mode='scale_width', collapsed=True)
-    addmat_pane = pn.Card(wtemptext, title="Add Material", sizing_mode='scale_width', collapsed=True)
+    wtop_pane = pn.pane.PNG('PetaviusLangrenus_Poupeau_3000.png',link_url="https://impacts.wiki",sizing_mode="scale_width")
+    wmain_pane = pn.Row(wcolumn1,wplot,sizing_mode="scale_width")
+    wmatdata_pane = pn.Card(wdf_widget, title="Materials Database", sizing_mode='scale_width', collapsed=True)
+    waddmat_pane = pn.Card(wtemptext, title="Add Material", sizing_mode='scale_width', collapsed=True)
     
-    combo_pane = pn.Column(top_pane,main_pane,wbottomtext,matdata_pane,addmat_pane,pn.layout.Divider(),wauthortext,width=1200,sizing_mode="scale_width")
+    wcombo_pane = pn.Column(wtop_pane,wmain_pane,wbottomtext,wmatdata_pane,waddmat_pane,pn.layout.Divider(),wauthortext,width=1200,sizing_mode="scale_width")
     
-    return combo_pane
+    return wcombo_pane
 
 ## this function creates a panel app that can be run as a standalone app in a web browser using
 ## IM_app(matdata,imat)

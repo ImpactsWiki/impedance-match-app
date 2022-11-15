@@ -514,7 +514,9 @@ class Material:
                 fname='IHED-plot-'+self.name+'-v'+__version__+'.pdf'
             plt.savefig(fname,dpi=300)
         plt.show()
+        #fig.close()
         uptmp=[]
+        #return fig
     def MakeHugoniot(self,uparr,ihedbool=False):
         """ Make Hugoniot from material data parameters
             Usage: MakeHugoniot(self,uparr,ihedbool=False):
@@ -748,6 +750,8 @@ class Material:
                 fname='EOS-plots-'+self.name+'-v'+__version__+'.pdf'
             fig.savefig(fname,dpi=300)
         plt.show()
+        plt.close(fig)
+        return fig
 
 def ClStr(value):
     """ Return string with value rounded to 2 decimal places.
