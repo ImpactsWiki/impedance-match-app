@@ -68,7 +68,7 @@ def IM_app(webappbool=False):
         options=bc_materials,
     )
 
-    wpmax = pn.widgets.FloatInput(name='Set plot Pmax (GPa), 0 to autoscale', value=0,step=5, start=0,width=int(menuwidth/2))
+    wpmax = pn.widgets.FloatInput(name='Set plot max P (GPa), 0 to autoscale', value=0,step=5, start=0,width=int(menuwidth/2))
 
     wvel = pn.widgets.FloatInput(name='Impact Velocity (km/s)', value=0, step=1e-1, start=0, end=100)
 
