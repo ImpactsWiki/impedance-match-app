@@ -624,15 +624,21 @@ class Material:
                 else:  
                     self.isen.parr[i] = (self.hug.parr[i]-(self.hug.earr[i]-pstart.e+pstart.p*dv/2.)*(self.hug.garr[i]/self.hug.varr[i])) / (1.-dv*self.hug.garr[i]/self.hug.varr[i]/2.)
                     self.isen.earr[i] = pstart.e-(pstart.p+self.isen.parr[i])*dv/2.
-                    self.isen.uparr[i]= pstart.up-(pstart.p-self.isen.parr[i])/np.sqrt(-(pstart.p-self.isen.parr[i])/(pstart.v-self.isen.varr[i]))
-                    self.isen.uparr2[i]= pstart.up-(pstart.p-self.isen.parr[i])/np.sqrt(-(pstart.p-self.isen.parr[i])/(pstart.v-self.isen.varr[i]))
+                    if (-(pstart.p-self.isen.parr[i])/(pstart.v-self.isen.varr[i])) > 0:
+                        self.isen.uparr[i]= pstart.up-(pstart.p-self.isen.parr[i])/np.sqrt(-(pstart.p-self.isen.parr[i])/(pstart.v-self.isen.varr[i]))
+                        #self.isen.uparr2[i]= pstart.up-(pstart.p-self.isen.parr[i])/np.sqrt(-(pstart.p-self.isen.parr[i])/(pstart.v-self.isen.varr[i]))
+                    else:
+                        return
             else:
                 dv = -(self.isen.varr[i]-self.isen.varr[i-1])
                 self.isen.parr[i] = (self.hug.parr[i]-(self.hug.earr[i]-self.isen.earr[i-1]+self.isen.parr[i-1]*dv/2.)*(self.hug.garr[i]/self.hug.varr[i])) / (1.-dv*self.hug.garr[i]/self.hug.varr[i]/2.)
                 self.isen.earr[i] = self.isen.earr[i-1]+(self.isen.parr[i-1]+self.isen.parr[i])*dv/2.
                 # these two equations for Uparr are identical along an isentrope
-                self.isen.uparr[i]= self.isen.uparr[i-1]-(self.isen.parr[i-1]-self.isen.parr[i])/np.sqrt(-(self.isen.parr[i-1]-self.isen.parr[i])/(self.isen.varr[i-1]-self.isen.varr[i]))
-                self.isen.uparr2[i]= self.isen.uparr2[i-1]+np.sqrt(-(self.isen.parr[i-1]-self.isen.parr[i])*(self.isen.varr[i-1]-self.isen.varr[i]))
+                if (-(self.isen.parr[i-1]-self.isen.parr[i])/(self.isen.varr[i-1]-self.isen.varr[i])) > 0:
+                    self.isen.uparr[i]= self.isen.uparr[i-1]-(self.isen.parr[i-1]-self.isen.parr[i])/np.sqrt(-(self.isen.parr[i-1]-self.isen.parr[i])/(self.isen.varr[i-1]-self.isen.varr[i]))
+                else:
+                    return
+                    #self.isen.uparr2[i]= self.isen.uparr2[i-1]+np.sqrt(-(self.isen.parr[i-1]-self.isen.parr[i])*(self.isen.varr[i-1]-self.isen.varr[i]))
             #print(i,dv,self.isen.parr[i]/1.e9,self.isen.uparr[i]/1.e3,self.isen.earr[i])
     def MakeReshockHug(self,pstart,useHugoniotbool=False):
         """ Calculate Mie-Grueneisen reshock Hugoniot from pstart on the principal Hugoniot.

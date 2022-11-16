@@ -81,23 +81,25 @@ def IM_app(webappbool=False):
         name='Use/save local IHED data',
     )
     wusehugoniot = pn.widgets.Checkbox(
-        value=False,
+        value=True,
         name='Use Hugoniot for release and reshock',
     )
+    wusehugoniotnote = pn.widgets.StaticText(value='(Mie-Grueneisen model can be unstable)')
 
     winfo = pn.widgets.StaticText(value='')
 
     # group to save PDF file when running in a Jupyter notebook ; does not work in Heroku web app
-    winstruct = pn.widgets.StaticText(value='Enter image file name with extension (.pdf, .png)')
+    winstruct = pn.widgets.StaticText(value='Enter file name with extension (.pdf, .png)')
+    winstruct2 = pn.widgets.StaticText(value='Saves to local dir (online in CoLab)')
     wbutton = pn.widgets.Button(name='Save Plot', button_type='primary',width=100)
     wfilename = pn.widgets.TextInput(value=default_image_filename)
-    wsaveimage = pn.Column(winstruct,wfilename,wbutton,width=menuwidth)
+    wsaveimage = pn.Column(winstruct,winstruct2,wfilename,wbutton,width=menuwidth)
     #end group
 
     if webappbool:
-        wcolumn1 = pn.Column('## Shock Impedance Match Tool\nSelect 2 or more materials and impact velocity.<br>Changing impact velocity updates the plot.', wmat1, wmat2, wmat3, wmat4, wvel, wshowdata, wuselocaldata, wusehugoniot, wpmax, winfo, width=menuwidth)
+        wcolumn1 = pn.Column('## Shock Impedance Match Tool\nSelect 2 or more materials and impact velocity.<br>Changing impact velocity updates the plot.', wmat1, wmat2, wmat3, wmat4, wvel, wshowdata, wuselocaldata, wusehugoniot, wusehugoniotnote, wpmax, winfo, width=menuwidth)
     else:
-        wcolumn1 = pn.Column('## Shock Impedance Match Tool\nSelect 2 or more materials and impact velocity<br>Changing impact velocity updates the plot.', wmat1, wmat2, wmat3, wmat4, wvel, wshowdata, wuselocaldata, wusehugoniot, wpmax, wsaveimage, winfo, width=menuwidth)
+        wcolumn1 = pn.Column('## Shock Impedance Match Tool\nSelect 2 or more materials and impact velocity<br>Changing impact velocity updates the plot.', wmat1, wmat2, wmat3, wmat4, wvel, wshowdata, wuselocaldata, wusehugoniot, wusehugoniotnote, wpmax, wsaveimage, winfo, width=menuwidth)
 
     @pn.depends(vel=wvel,usehugoniot=wusehugoniot,showdata=wshowdata)
     def plot(vel,usehugoniot,showdata): 
@@ -223,45 +225,52 @@ def IM_app(webappbool=False):
                     #print('Mat2 Isentrope from P=',mat2.im1.p/1.e9,' GPa up=',mat2.im1.up/1.e3,' km/s')
                     up_offset = np.interp(mat2.im1.p,mat2.isen.parr,mat2.isen.uparr)
                     #plt.plot(mat2.isen.uparr/1.e3,mat2.isen.parr/1.e9,label='Mat2 Isentrope 2')
-
                     res = IM.Intersection(up,mat3.hug.parr,2*up_offset-mat2.isen.uparr,mat2.isen.parr)
                     #print('release or reshock: ',res[0],up_offset)
-                    if res[0][0] > up_offset:
-                        # release
-                        res2 = IM.Intersection(up,mat3.hug.parr,(2*up_offset-mat2.isen.uparr),mat2.isen.parr)
-                        #print('Release res2=',res2)
-                        mat2.im2.up=res2[0][0] # m/s
-                        mat2.im2.p=res2[1][0] # Pa
-                        mat2.im2.v=1./(np.interp(res2[0],up,1./mat2.isen.varr)[0]) # assumes f is monotonic and increasing
-                        mat2.im2.e=np.interp(res2[0],up,mat2.isen.earr)[0] # assumes f is monotonic and increasing
-                        mat3.im1.up=res2[0][0]
-                        mat3.im1.p=res2[1][0]
-                        mat3.im1.v=1./(np.interp(res2[0],up,1./mat3.hug.varr)[0]) # assumes f is monotonic and increasing
-                        mat3.im1.e=np.interp(res2[0],up,mat3.hug.earr)[0] # assumes f is monotonic and increasing
-                        plt.plot((2*up_offset-mat2.isen.uparr)/1.e3,mat2.isen.parr/1.e9,label='Mat2 Isentrope')
-                        plt.scatter(mat3.im1.up/1.e3,mat3.im1.p/1.e9,label='IM mat3')
-                        string3B = ' RELEASE'
+                    if (up_offset > 0) and (len(res) > 0):
+                        # Mie-Grueneisen model mat3 should be OK                        
+                        if res[0][0] > up_offset:
+                            # release
+                            res2 = IM.Intersection(up,mat3.hug.parr,(2*up_offset-mat2.isen.uparr),mat2.isen.parr)
+                            #print('Release res2=',res2)
+                            mat2.im2.up=res2[0][0] # m/s
+                            mat2.im2.p=res2[1][0] # Pa
+                            mat2.im2.v=1./(np.interp(res2[0],up,1./mat2.isen.varr)[0]) # assumes f is monotonic and increasing
+                            mat2.im2.e=np.interp(res2[0],up,mat2.isen.earr)[0] # assumes f is monotonic and increasing
+                            mat3.im1.up=res2[0][0]
+                            mat3.im1.p=res2[1][0]
+                            mat3.im1.v=1./(np.interp(res2[0],up,1./mat3.hug.varr)[0]) # assumes f is monotonic and increasing
+                            mat3.im1.e=np.interp(res2[0],up,mat3.hug.earr)[0] # assumes f is monotonic and increasing
+                            plt.plot((2*up_offset-mat2.isen.uparr)/1.e3,mat2.isen.parr/1.e9,label='Mat2 Isentrope')
+                            plt.scatter(mat3.im1.up/1.e3,mat3.im1.p/1.e9,label='IM mat3')
+                            string3B = ' RELEASE'
+                        else:
+                            # reshock
+                            mat2.MakeReshockHug(mat2.im1,useHugoniotbool=wusehugoniot.value)
+                            res2 = IM.Intersection(up,mat3.hug.parr,mat2.reshock.uparr,mat2.reshock.parr)
+                            #print('Reshock res2=',res2[0])
+                            mat2.im2.up=res2[0][0] # m/s
+                            mat2.im2.p=res2[1][0] # Pa
+                            mat2.im2.v=1./(np.interp(res2[0],up,1./mat2.reshock.varr)[0]) # assumes f is monotonic and increasing
+                            mat2.im2.e=np.interp(res2[0],up,mat2.reshock.earr)[0] # assumes f is monotonic and increasing
+                            mat3.im1.up=res2[0][0]
+                            mat3.im1.p=res2[1][0]
+                            mat3.im1.v=1./(np.interp(res2[0],up,1./mat3.hug.varr)[0]) # assumes f is monotonic and increasing
+                            mat3.im1.e=np.interp(res2[0],up,mat3.hug.earr)[0] # assumes f is monotonic and increasing
+                            plt.plot(mat2.reshock.uparr/1.e3,mat2.reshock.parr/1.e9,label='Mat2 reshock')
+                            plt.scatter(mat3.im1.up/1.e3,mat3.im1.p/1.e9,label='IM mat3')
+                            string3B = ' RESHOCK'
+                        if wusehugoniot.value:
+                            string3 = '\nImp. Match Mat3 (HUG): Up='+IM.ClStr(mat3.im1.up/1.e3)+' (km/s) P='+IM.ClStr(mat3.im1.p/1.e9)+' (GPa)'+string3B
+                        else:
+                            string3 = '\nImp. Match Mat3 (MG): Up='+IM.ClStr(mat3.im1.up/1.e3)+' (km/s) P='+IM.ClStr(mat3.im1.p/1.e9)+' (GPa)'+string3B
                     else:
-                        # reshock
-                        mat2.MakeReshockHug(mat2.im1,useHugoniotbool=wusehugoniot.value)
-                        res2 = IM.Intersection(up,mat3.hug.parr,mat2.reshock.uparr,mat2.reshock.parr)
-                        #print('Reshock res2=',res2[0])
-                        mat2.im2.up=res2[0][0] # m/s
-                        mat2.im2.p=res2[1][0] # Pa
-                        mat2.im2.v=1./(np.interp(res2[0],up,1./mat2.reshock.varr)[0]) # assumes f is monotonic and increasing
-                        mat2.im2.e=np.interp(res2[0],up,mat2.reshock.earr)[0] # assumes f is monotonic and increasing
-                        mat3.im1.up=res2[0][0]
-                        mat3.im1.p=res2[1][0]
-                        mat3.im1.v=1./(np.interp(res2[0],up,1./mat3.hug.varr)[0]) # assumes f is monotonic and increasing
-                        mat3.im1.e=np.interp(res2[0],up,mat3.hug.earr)[0] # assumes f is monotonic and increasing
-                        plt.plot(mat2.reshock.uparr/1.e3,mat2.reshock.parr/1.e9,label='Mat2 reshock')
-                        plt.scatter(mat3.im1.up/1.e3,mat3.im1.p/1.e9,label='IM mat3')
-                        string3B = ' RESHOCK'
-                    if wusehugoniot.value:
-                        string3 = '\nImp. Match Mat3 (HUG): Up='+IM.ClStr(mat3.im1.up/1.e3)+' (km/s) P='+IM.ClStr(mat3.im1.p/1.e9)+' (GPa)'+string3B
-                    else:
-                        string3 = '\nImp. Match Mat3 (MG): Up='+IM.ClStr(mat3.im1.up/1.e3)+' (km/s) P='+IM.ClStr(mat3.im1.p/1.e9)+' (GPa)'+string3B
-
+                        # something wrong with mat3 Mie Grueneisn model
+                        userinfostr = userinfostr + '<br> ERROR WITH MIE-GRUENEISEN MODEL FOR MAT 3. Use Hugoniot for reshock/release.'
+                        id4=[] # skip 4th material if there is a problem with mat3
+                        winfo.value = 'ERROR WITH MIE-GRUENEISEN MODEL FOR MAT 3. Use Hugoniot for reshock/release.'
+                        plt.close(fig)
+                        return fig
                 if len(id4)>0:
                     # optional fourth material included
                     # plot mat4 principal Hugoniot
@@ -280,42 +289,45 @@ def IM_app(webappbool=False):
 
                     res = IM.Intersection(up,mat4.hug.parr,2*up_offset-mat3.isen.uparr,mat3.isen.parr)
                     #print('release or reshock: ',res[0],up_offset)
-                    if res[0][0] > up_offset:
-                        # release
-                        res3 = IM.Intersection(up,mat4.hug.parr,(2*up_offset-mat3.isen.uparr),mat3.isen.parr)
-                        #print('Release res2=',res2)
-                        mat3.im2.up=res3[0][0] # m/s
-                        mat3.im2.p=res3[1][0] # Pa
-                        mat3.im2.v=1./(np.interp(res3[0],up,1./mat3.isen.varr)[0]) # assumes f is monotonic and increasing
-                        mat3.im2.e=np.interp(res3[0],up,mat3.isen.earr)[0] # assumes f is monotonic and increasing
-                        mat4.im1.up=res3[0][0]
-                        mat4.im1.p=res3[1][0]
-                        mat4.im1.v=1./(np.interp(res3[0],up,1./mat4.hug.varr)[0]) # assumes f is monotonic and increasing
-                        mat4.im1.e=np.interp(res3[0],up,mat4.hug.earr)[0] # assumes f is monotonic and increasing
-                        plt.plot((2*up_offset-mat3.isen.uparr)/1.e3,mat3.isen.parr/1.e9,label='Mat3 Isentrope')
-                        plt.scatter(mat4.im1.up/1.e3,mat4.im1.p/1.e9,label='IM mat4')
-                        string4B = ' RELEASE'
+                    if (up_offset > 0) and (len(res) > 0):
+                        if res[0][0] > up_offset:
+                            # release
+                            res3 = IM.Intersection(up,mat4.hug.parr,(2*up_offset-mat3.isen.uparr),mat3.isen.parr)
+                            #print('Release res2=',res2)
+                            mat3.im2.up=res3[0][0] # m/s
+                            mat3.im2.p=res3[1][0] # Pa
+                            mat3.im2.v=1./(np.interp(res3[0],up,1./mat3.isen.varr)[0]) # assumes f is monotonic and increasing
+                            mat3.im2.e=np.interp(res3[0],up,mat3.isen.earr)[0] # assumes f is monotonic and increasing
+                            mat4.im1.up=res3[0][0]
+                            mat4.im1.p=res3[1][0]
+                            mat4.im1.v=1./(np.interp(res3[0],up,1./mat4.hug.varr)[0]) # assumes f is monotonic and increasing
+                            mat4.im1.e=np.interp(res3[0],up,mat4.hug.earr)[0] # assumes f is monotonic and increasing
+                            plt.plot((2*up_offset-mat3.isen.uparr)/1.e3,mat3.isen.parr/1.e9,label='Mat3 Isentrope')
+                            plt.scatter(mat4.im1.up/1.e3,mat4.im1.p/1.e9,label='IM mat4')
+                            string4B = ' RELEASE'
+                        else:
+                            # reshock
+                            mat3.MakeReshockHug(mat3.im1,useHugoniotbool=wusehugoniot.value)
+                            res3 = IM.Intersection(up,mat4.hug.parr,mat3.reshock.uparr,mat3.reshock.parr)
+                            #print('Reshock res3=',res3[0])
+                            mat3.im2.up=res3[0][0] # m/s
+                            mat3.im2.p=res3[1][0] # Pa
+                            mat3.im2.v=1./(np.interp(res3[0],up,1./mat3.reshock.varr)[0]) # assumes f is monotonic and increasing
+                            mat3.im2.e=np.interp(res3[0],up,mat3.reshock.earr)[0] # assumes f is monotonic and increasing
+                            mat4.im1.up=res3[0][0]
+                            mat4.im1.p=res3[1][0]
+                            mat4.im1.v=1./(np.interp(res3[0],up,1./mat4.hug.varr)[0]) # assumes f is monotonic and increasing
+                            mat4.im1.e=np.interp(res3[0],up,mat4.hug.earr)[0] # assumes f is monotonic and increasing
+                            plt.plot(mat3.reshock.uparr/1.e3,mat3.reshock.parr/1.e9,label='Mat3 reshock')
+                            plt.scatter(mat4.im1.up/1.e3,mat4.im1.p/1.e9,label='IM mat4')
+                            string4B = ' RESHOCK'
+                        if wusehugoniot.value:
+                            string4 = '\nImp. Match Mat4 (HUG): Up='+IM.ClStr(mat4.im1.up/1.e3)+' (km/s) P='+IM.ClStr(mat4.im1.p/1.e9)+' (GPa)'+string4B
+                        else:
+                            string4 = '\nImp. Match Mat4 (MG): Up='+IM.ClStr(mat4.im1.up/1.e3)+' (km/s) P='+IM.ClStr(mat4.im1.p/1.e9)+' (GPa)'+string4B
                     else:
-                        # reshock
-                        mat3.MakeReshockHug(mat3.im1,useHugoniotbool=wusehugoniot.value)
-                        res3 = IM.Intersection(up,mat4.hug.parr,mat3.reshock.uparr,mat3.reshock.parr)
-                        #print('Reshock res3=',res3[0])
-                        mat3.im2.up=res3[0][0] # m/s
-                        mat3.im2.p=res3[1][0] # Pa
-                        mat3.im2.v=1./(np.interp(res3[0],up,1./mat3.reshock.varr)[0]) # assumes f is monotonic and increasing
-                        mat3.im2.e=np.interp(res3[0],up,mat3.reshock.earr)[0] # assumes f is monotonic and increasing
-                        mat4.im1.up=res3[0][0]
-                        mat4.im1.p=res3[1][0]
-                        mat4.im1.v=1./(np.interp(res3[0],up,1./mat4.hug.varr)[0]) # assumes f is monotonic and increasing
-                        mat4.im1.e=np.interp(res3[0],up,mat4.hug.earr)[0] # assumes f is monotonic and increasing
-                        plt.plot(mat3.reshock.uparr/1.e3,mat3.reshock.parr/1.e9,label='Mat3 reshock')
-                        plt.scatter(mat4.im1.up/1.e3,mat4.im1.p/1.e9,label='IM mat4')
-                        string4B = ' RESHOCK'
-                    if wusehugoniot.value:
-                        string4 = '\nImp. Match Mat4 (HUG): Up='+IM.ClStr(mat4.im1.up/1.e3)+' (km/s) P='+IM.ClStr(mat4.im1.p/1.e9)+' (GPa)'+string4B
-                    else:
-                        string4 = '\nImp. Match Mat4 (MG): Up='+IM.ClStr(mat4.im1.up/1.e3)+' (km/s) P='+IM.ClStr(mat4.im1.p/1.e9)+' (GPa)'+string4B
-
+                        # something wrong with mat4 Mie Grueneisn model
+                        userinfostr = userinfostr + '<br> ERROR WITH MIE-GRUENEISEN MODEL FOR MAT 4. Use Hugoniot for reshock/release.'
 
                 plt.title(string1+string2+string3+string4)            
                 plt.legend(bbox_to_anchor=(1,1), loc="upper left") #bbox_to_anchor=(1.05, 1)
@@ -339,7 +351,7 @@ def IM_app(webappbool=False):
 
     wplot=pn.panel(plot, sizing_mode='scale_width') # panel to display the impedance match plot
 
-    wbottomtext = pn.widgets.StaticText(value='<b>Manual</b> <a href="https://impactswiki.net/impact-tools-book/">https://impactswiki.net/impact-tools-book/</a><br><b>Repo</b> <a href="https://github.com/ImpactsWiki/impedance-match-app">https://github.com/ImpactsWiki/impedance-match-app</a><br>If crashing or unresponsive, use Hugoniot for release and reshock.')
+    wbottomtext = pn.widgets.StaticText(value='<b>Manual</b> <a href="https://impactswiki.net/impact-tools-book/">https://impactswiki.net/impact-tools-book/</a><br><b>Repo</b> <a href="https://github.com/ImpactsWiki/impedance-match-app">https://github.com/ImpactsWiki/impedance-match-app</a><br>If crashing or unresponsive, use Hugoniot for release and reshock. Common problems with large impedance mismatch materials and MG models.')
     
     # Widgets below the main IM Tool
     # display current matdata DataFrame
