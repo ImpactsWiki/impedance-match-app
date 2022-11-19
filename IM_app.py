@@ -476,7 +476,7 @@ def IM_app(webappbool=False):
         idx = np.where(matdata.loc[:,'Material'].values == wmat_ihed.value)[0]
         matplot = IM.Material()
         matplot.DefineParamsID(wmat_ihed.value,matdata,imat)
-        upplot = np.arange(0,15000)
+        upplot = np.arange(0,15000,50)
         matplot.MakeHugoniot(upplot)
         if matplot.ihed.id >0:
             matplot.GetIHED(uselocalbool=wuselocaldata.value)
@@ -498,7 +498,7 @@ def IM_app(webappbool=False):
                     diff = us-(matplot.c0+matplot.s1*up-matplot.s2*up*np.exp(-matplot.d*up))
             # remake uparr and Hugoniot to reach largest value in IHED database
             if len(ind)>0:
-                upplot = np.arange(0,max(up))
+                upplot = np.arange(0,max(up),50)
                 matplot.MakeHugoniot(upplot)
 
         paramstring = 'r$_0$='+IM.ClStr(matplot.rho0/1.e3)+' (g/cm$^3$), Us (km/s)='+IM.ClStr(matplot.c0/1.e3)+'+'+IM.ClStr(matplot.s1)+'up'
@@ -545,7 +545,7 @@ def IM_app(webappbool=False):
     wplot_mat = pn.Column(wmat_ihed,wfig_mat,sizing_mode='scale_width')
     
     # author into at bottom of app
-    wauthortext = pn.widgets.StaticText(value='v1.1.0 &#169; 2022 S. T. Stewart, Planetary Impacts Community Wiki')
+    wauthortext = pn.widgets.StaticText(value='v1.1.1 &#169; 2022 S. T. Stewart, Planetary Impacts Community Wiki')
 
     # collect the various parts of the web app
     wtop_pane = pn.pane.PNG('PetaviusLangrenus_Poupeau_3000.png',link_url="https://impacts.wiki",sizing_mode="scale_width")
