@@ -381,7 +381,7 @@ def IM_app(webappbool=False):
     # display current matdata DataFrame
     wdf_widget = pn.widgets.Tabulator(matdata)
     # entry boxes for new material parameters
-    waddmattext = pn.widgets.StaticText(value='Enter values for new material in MKS. <a href="https://impactswiki.net/impact-tools-book/im/ihed-mats-all.txt" target="_blank">Search the IHED Database to find the material number</a>; enter -1 if not available.<p> 2, 3, or 4 non-zero parameters define the form of the Hugoniot:<br>2=Linear: Us = c0 + s1*up<br>3=Quadratic: Us = c0 + s1*up + s2*up^2<br>4=Mod. Universal Liquid: Us = c0 + s1*up - c*up*exp(-d*up)<p>Mie-Grueneisen parameter: g(v) = g0*(v/v0)^q')
+    waddmattext = pn.widgets.StaticText(value='Enter values for new material in MKS. <a href="https://impactswiki.net/impact-tools-book/im/ihed-mats-all.html" target="_blank">Search the IHED Database to find the material number</a>; enter -1 if not available.<p> 2, 3, or 4 non-zero parameters define the form of the Hugoniot:<br>2=Linear: Us = c0 + s1*up<br>3=Quadratic: Us = c0 + s1*up + s2*up^2<br>4=Mod. Universal Liquid: Us = c0 + s1*up - c*up*exp(-d*up)<p>Mie-Grueneisen parameter: g(v) = g0*(v/v0)^q')
     if webappbool:
         waddmattext.value = 'Changes to materials database will be lost upon refreshing this web app. <a href="https://impactswiki.net/impact-tools-book/" target="_blank">Use the Jupyter Notebook version</a> to access a personal database.<p>'+waddmattext.value
     wnewname = pn.widgets.TextInput(name='New Material Name',value='Enter Name')
