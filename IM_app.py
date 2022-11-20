@@ -555,7 +555,7 @@ def IM_app(webappbool=False):
     waddihedtext = pn.widgets.StaticText(value='Quickly add an existing IHED material. <a href="https://impactswiki.net/impact-tools-book/im/ihed-mats-all.html" target="_blank">Search the IHED Database to find the material number.</a><p> Select equation form to fit to the IHED data.<p>Hugoniot forms:<br>Linear: Us = c0 + s1*up<br>Quadratic: Us = c0 + s1*up + s2*up^2<br>Mod. Universal Liquid: Us = c0 + s1*up - c*up*exp(-d*up)<p>Enter Mie-Grueneisen parameters: g(v) = g0*(v/v0)^q')
     waddihedinfo = pn.widgets.StaticText(value='Enter material name and IHED number.')
     if webappbool:
-        wadihedtext.value = 'Changes to materials database will be lost upon refreshing this web app. <a href="https://impactswiki.net/impact-tools-book/" target="_blank">Use the Jupyter Notebook version</a> to develop a personal database.<p>'+waddmattext.value
+        waddihedtext.value = 'Changes to materials database will be lost upon refreshing this web app. <a href="https://impactswiki.net/impact-tools-book/" target="_blank">Use the Jupyter Notebook version</a> to develop a personal database.<p>'+waddmattext.value
     wnewnameihed = pn.widgets.TextInput(name='Material Name for Menus',value='Enter Name')
     waddihedid = pn.widgets.IntInput(name='IHED substance id number [int]', value=-1, page_step_multiplier=1)
     wupminihed = pn.widgets.FloatInput(name='Up min for fit [m/s] (set to 0 for full range)', value=0, page_step_multiplier=1)
