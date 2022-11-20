@@ -22,6 +22,7 @@ def IM_app(webappbool=False):
         v1.0.3 - 11/15/22 STS auto-resize the plot; added panel to add a new material
         v1.1.0 - 11/19/22 STS rewrote the IM match into a function and cleaned up error messaging
         v1.2.0 - 11/20/22 STS added quick fit and add IHED material
+        v1.2.1 - 11/20/22 STS reduced memory for Heroku up arrays 500, 1000
     """
     #========================================================
     # WIDGET SETTINGS & CUSTOMIZATIONS
@@ -146,7 +147,7 @@ def IM_app(webappbool=False):
             #
             # generic settings -- increase for MG model and low density materials if needed below
             uparr_factor = 2. # make up arrays up to impvel_factor*vel 
-            uparr_length = 2000 # number of points (resolution) of the up array
+            uparr_length = 500 # number of points (resolution) of the up array
             upgeneral = np.arange(0,uparr_length+1)/uparr_length*vel*uparr_factor # m/s
 
             # INITIALIZE MATERIALS FROM DROPDOWN MENUS
@@ -158,7 +159,7 @@ def IM_app(webappbool=False):
                 if wusemgmodel.value and (mat1.rho0 < 5000):
                     # if using MG model, increase the length of the particle velocity array
                     uparr_factor = 5. # make up arrays up to impvel_factor*vel 
-                    uparr_length = 5000. # number of points (resolution) of the up array
+                    uparr_length = 1000. # number of points (resolution) of the up array
                     upmat1 = np.arange(0,uparr_length+1)/uparr_length*vel*uparr_factor # m/s
                 else:
                     upmat1 = np.copy(upgeneral) # each material is an independent set of arrays
