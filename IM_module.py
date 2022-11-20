@@ -11,7 +11,8 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 import os
 #
-__version__ = '1.1.0' # November 19, 2022 Added IM_match function; lots of debugging and error messaging.
+__version__ = '1.1.1' # November 19, 2022 Debug MG release E,V calc
+#__version__ = '1.1.0' # November 19, 2022 Added IM_match function; lots of debugging and error messaging.
 #__version__ = '1.0.4' # November 14, 2022 Debugging.
 #__version__ = '1.0.3' # November 13, 2022 Fixed symmetric impact bug; code cleanup and documentation.
 #__version__ = '1.0.2' # November 12, 2022 Added Universal Liquid Hugoniot
@@ -937,8 +938,7 @@ class Material:
                 print('ISEN SUCCESS = ',isen_success)
                 # find intersection between mata isentrope and matb Hugoniot
                 ind = np.where((self.isen.parr > 0))[0]
-                up_offset = np.interp(self.im1.p,self.isen.parr[ind],self.isen.uparr[ind])
-                res_release = Intersection(matb.hug.uparr,matb.hug.parr,(2*up_offset-self.isen.uparr),self.isen.parr)
+                res_release = Intersection(matb.hug.uparr,matb.hug.parr,(2*self.im1.up-self.isen.uparr),self.isen.parr)
                 print('res_release = ',res_release,len(res_release))
                 if len(res_release[0])>0:
                     #with open('log.txt', 'a') as fp: # debugging
