@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import panel as pn
+from datetime import datetime
 
 # Required Impedance Match Calculation classes and functions for this app
 import IM_module as IM 
@@ -20,7 +21,7 @@ def IM_app(webappbool=False):
         v1.0.2 - 11/14/22 STS framing the app
         v1.0.3 - 11/15/22 STS auto-resize the plot; added panel to add a new material
         v1.1.0 - 11/19/22 STS rewrote the IM match into a function and cleaned up error messaging
-        v1.1.1 - 11/19/22 STS smaller memory footprint for Heroku
+        v1.2.0 - 11/20/22 STS added quick fit and add IHED material
     """
     #========================================================
     # WIDGET SETTINGS & CUSTOMIZATIONS
@@ -91,14 +92,15 @@ def IM_app(webappbool=False):
     )
     wusemgmodel = pn.widgets.Checkbox(
         value=False,
-        name='Use M-G model for release and reshock',
+        name='Use M-G model for release & reshock (slower)',
+        width=menuwidth,
     )
 
     winfo = pn.widgets.StaticText(value='\n') # string to display information back to the user
 
     # group to save PDF file when running in a Jupyter notebook ; does not work in Heroku web app
     winstruct = pn.widgets.StaticText(value='Enter file name with extension (.pdf, .png)')
-    winstruct2 = pn.widgets.StaticText(value='Saves to local dir (online in CoLab)')
+    winstruct2 = pn.widgets.StaticText(value='Saves to local directory (online in CoLab)')
     wbutton = pn.widgets.Button(name='Save IM Plot', button_type='primary',width=100)
     wfilename = pn.widgets.TextInput(value=default_image_filename)
     wsaveimage = pn.Column(winstruct,winstruct2,wfilename,wbutton,width=menuwidth)
@@ -144,7 +146,7 @@ def IM_app(webappbool=False):
             #
             # generic settings -- increase for MG model and low density materials if needed below
             uparr_factor = 2. # make up arrays up to impvel_factor*vel 
-            uparr_length = 500 # number of points (resolution) of the up array
+            uparr_length = 2000 # number of points (resolution) of the up array
             upgeneral = np.arange(0,uparr_length+1)/uparr_length*vel*uparr_factor # m/s
 
             # INITIALIZE MATERIALS FROM DROPDOWN MENUS
@@ -156,7 +158,7 @@ def IM_app(webappbool=False):
                 if wusemgmodel.value and (mat1.rho0 < 5000):
                     # if using MG model, increase the length of the particle velocity array
                     uparr_factor = 5. # make up arrays up to impvel_factor*vel 
-                    uparr_length = 1000. # number of points (resolution) of the up array
+                    uparr_length = 5000. # number of points (resolution) of the up array
                     upmat1 = np.arange(0,uparr_length+1)/uparr_length*vel*uparr_factor # m/s
                 else:
                     upmat1 = np.copy(upgeneral) # each material is an independent set of arrays
@@ -175,7 +177,7 @@ def IM_app(webappbool=False):
                 if wusemgmodel.value and (mat2.rho0 < 5000):
                     # if using MG model, increase the length of the particle velocity array
                     uparr_factor = 5. # make up arrays up to impvel_factor*vel 
-                    uparr_length = 1000. # number of points (resolution) of the up array
+                    uparr_length = 5000. # number of points (resolution) of the up array
                     upmat2 = np.arange(0,uparr_length+1)/uparr_length*vel*uparr_factor # m/s
                 else:
                     upmat2 = np.copy(upgeneral)
@@ -194,7 +196,7 @@ def IM_app(webappbool=False):
                 if wusemgmodel.value and (mat3.rho0 < 5000):
                     # if using MG model, increase the length of the particle velocity array
                     uparr_factor = 5. # make up arrays up to impvel_factor*vel 
-                    uparr_length = 1000. # number of points (resolution) of the up array
+                    uparr_length = 5000. # number of points (resolution) of the up array
                     upmat3 = np.arange(0,uparr_length+1)/uparr_length*vel*uparr_factor # m/s
                 else:
                     upmat3 = np.copy(upgeneral)
@@ -217,7 +219,7 @@ def IM_app(webappbool=False):
                 if wusemgmodel.value and (mat4.rho0 < 5000):
                     # if using MG model, increase the length of the particle velocity array
                     uparr_factor = 5. # make up arrays up to impvel_factor*vel 
-                    uparr_length = 1000. # number of points (resolution) of the up array
+                    uparr_length = 5000. # number of points (resolution) of the up array
                     upmat4 = np.arange(0,uparr_length+1)/uparr_length*vel*uparr_factor # m/s
                 else:
                     upmat4 = np.copy(upgeneral)
@@ -367,10 +369,10 @@ def IM_app(webappbool=False):
                 plt.xlim(0,upmaxfactor*vel/1.e3)
             plt.tight_layout()
             if usemgmodel:
-                userinfostr = userinfostr + '<p> Using Mie-Grueneisen model for reshock and release.'
+                userinfostr = userinfostr + ' Mie-Grueneisen model for reshock and release.'
             else:
-                userinfostr = userinfostr + '<p> Using Hugoniot for reshock and release.'
-            winfo.value = '<p>Impact velocity '+IM.ClStr(vel/1.e3)+' (km/s)'+string_IM_res+userinfostr+'<p>IM Tool v'+IM.__version__
+                userinfostr = userinfostr + ' Hugoniot for reshock and release.'
+            winfo.value = '<p>Impact velocity '+IM.ClStr(vel/1.e3)+' (km/s).'+userinfostr+string_IM_res+'<p>IM Tool v'+IM.__version__
             plt.close(fig)
             return fig
 
@@ -379,8 +381,12 @@ def IM_app(webappbool=False):
     wbottomtext = pn.widgets.StaticText(value='<b>Manual</b> <a href="https://impactswiki.net/impact-tools-book/" target="_blank">https://impactswiki.net/impact-tools-book/</a><br><b>Repo</b> <a href="https://github.com/ImpactsWiki/impedance-match-app" target="_blank">https://github.com/ImpactsWiki/impedance-match-app</a><br><b>IHED Database</b> <a href="http://www.ihed.ras.ru/rusbank/" target="_blank">http://www.ihed.ras.ru/rusbank/</a><br>The application range of the Mie-Grueneisen model is limited; beware use at higher pressures with large impedance mismatch calculations.')
     
     # Widgets below the main IM Tool
-    # display current matdata DataFrame
+    #-----------------------------------------------------------------------------
+    # Toggle Pane: display current matdata DataFrame
     wdf_widget = pn.widgets.Tabulator(matdata)
+
+    #-----------------------------------------------------------------------------
+    # Toggle Pane: Add or Remove Material
     # entry boxes for new material parameters
     waddmattext = pn.widgets.StaticText(value='Enter values for new material in MKS. <a href="https://impactswiki.net/impact-tools-book/im/ihed-mats-all.html" target="_blank">Search the IHED Database to find the material number</a>; enter -1 if not available.<p> 2, 3, or 4 non-zero parameters define the form of the Hugoniot:<br>2=Linear: Us = c0 + s1*up<br>3=Quadratic: Us = c0 + s1*up + s2*up^2<br>4=Mod. Universal Liquid: Us = c0 + s1*up - c*up*exp(-d*up)<p>Mie-Grueneisen parameter: g(v) = g0*(v/v0)^q')
     if webappbool:
@@ -394,7 +400,7 @@ def IM_app(webappbool=False):
     wg0 = pn.widgets.FloatInput(name='g0 [-]', value=1., page_step_multiplier=1)
     wq = pn.widgets.FloatInput(name='q [-]', value=1., page_step_multiplier=1)
     wihed = pn.widgets.IntInput(name='IHED substance id number [int]', value=-1, page_step_multiplier=1)
-    wdate = pn.widgets.TextInput(name='Date', value='YYYY-MM-DD')
+    #wdate = pn.widgets.TextInput(name='Date', value='YYYY-MM-DD')
     
     wnote = pn.widgets.TextInput(name='Note', value='Enter reference for material parameters.')
     waddmatbutton = pn.widgets.Button(name='Add material to database', button_type='primary')
@@ -415,7 +421,8 @@ def IM_app(webappbool=False):
         newmatdata.iloc[:,imat.g0] = wg0.value
         newmatdata.iloc[:,imat.q] = wq.value
         newmatdata.iloc[:,imat.ihed] = wihed.value
-        newmatdata.iloc[:,imat.date] = wdate.value
+        dt = datetime.now()        
+        newmatdata.iloc[:,imat.date] = dt.strftime('%Y-%m-%d')
         newmatdata.iloc[:,imat.note] = wnote.value
         matdata = pd.concat([newmatdata,matdata],ignore_index=True)
         # update all the material listings
@@ -459,14 +466,14 @@ def IM_app(webappbool=False):
         wmat_drop.options=all_materials
         wmat_ihed.options=all_materials
     wremovematbutton = pn.widgets.Button(name='Remove material from database', button_type='primary')
-    wremovematbutton.on_click(on_dropmatbutton_clicked)#,matdata=matdata,ab=ab_materials,bc=bc_materials)
-
+    wremovematbutton.on_click(on_dropmatbutton_clicked)
     
-    wnewparams = pn.Column(waddmattext,wnewname,wrho0,wc0,ws1,ws2,wd,wg0,wq,wihed,wdate,wnote,waddmatbutton,wdivider,wmat_drop,wremovematbutton,width=500)
+    
+    wnewparams = pn.Column(waddmattext,wnewname,wrho0,wc0,ws1,ws2,wd,wg0,wq,wihed,wnote,waddmatbutton,wdivider,wmat_drop,wremovematbutton,width=500)
   
 
-    #---------------------------
-    # plot ihed pane
+    #-----------------------------------------------------------------------------
+    # Toggle Pane: plot material
     @pn.depends(wmat_ihed)
     def plot_mat(mat_ihed=wmat_ihed):
         # somebody please tell me the better way to access these variables in a function....
@@ -512,7 +519,7 @@ def IM_app(webappbool=False):
                 paramstring += IM.ClStr(matplot.s2)+'up exp(-'+str(matplot.d*1.e3)
             if matplot.s2>0:
                 paramstring += '+'+IM.ClStr(matplot.s2)+'up exp(-'+str(matplot.d*1.e3)+'up)'
-    
+        # BEGIN PLOT HERE
         fig = plt.figure() # initialize the figure object
         labelstr=''
         if matplot.d == 0:
@@ -539,13 +546,160 @@ def IM_app(webappbool=False):
 
     wfig_mat=pn.panel(plot_mat, sizing_mode='scale_width') # panel to display the impedance match plot
 
-    #wplotihedbutton = pn.widgets.Button(name='Select material to plot', button_type='primary')
-    #wplotihedbutton.on_click(on_plotihedbutton_clicked)
     
     wplot_mat = pn.Column(wmat_ihed,wfig_mat,sizing_mode='scale_width')
+
+    #-----------------------------------------------------------------------------
+    # Toggle Pane: Quick add IHED material 
     
+    waddihedtext = pn.widgets.StaticText(value='Quickly add an existing IHED material. <a href="https://impactswiki.net/impact-tools-book/im/ihed-mats-all.html" target="_blank">Search the IHED Database to find the material number.</a><p> Select equation form to fit to the IHED data.<p>Hugoniot forms:<br>Linear: Us = c0 + s1*up<br>Quadratic: Us = c0 + s1*up + s2*up^2<br>Mod. Universal Liquid: Us = c0 + s1*up - c*up*exp(-d*up)<p>Enter Mie-Grueneisen parameters: g(v) = g0*(v/v0)^q')
+    waddihedinfo = pn.widgets.StaticText(value='Enter material name and IHED number.')
+    if webappbool:
+        wadihedtext.value = 'Changes to materials database will be lost upon refreshing this web app. <a href="https://impactswiki.net/impact-tools-book/" target="_blank">Use the Jupyter Notebook version</a> to develop a personal database.<p>'+waddmattext.value
+    wnewnameihed = pn.widgets.TextInput(name='Material Name for Menus',value='Enter Name')
+    waddihedid = pn.widgets.IntInput(name='IHED substance id number [int]', value=-1, page_step_multiplier=1)
+    wupminihed = pn.widgets.FloatInput(name='Up min for fit [m/s] (set to 0 for full range)', value=0, page_step_multiplier=1)
+    wupmaxihed = pn.widgets.FloatInput(name='Up max for fit [m/s] (set to 1e99 for full range)', value=1.e99, page_step_multiplier=1)
+    wg0ihed = pn.widgets.FloatInput(name='g0 [-]', value=1., page_step_multiplier=1)
+    wqihed = pn.widgets.FloatInput(name='q [-]', value=1., page_step_multiplier=1)
+    wfitform=pn.widgets.Select(
+        name='Select Hugoniot equation',
+        options=['Linear','Quadratic','Universal Liquid'],
+    )
+    
+    wfitihedbutton = pn.widgets.Button(name='Fit IHED data', button_type='primary')
+    @pn.depends(wfitihedbutton,wfitform)
+    def on_fitihedbutton_clicked(event,fitform=wfitform):
+        global matihed
+        
+        #print('CLICKED FIT BUTTON')
+        if waddihedid.value <=0:
+            waddihedinfo.value = 'Enter valid IHED id number.'
+            # no ihed number provided, so no figure
+            return
+        # get form
+        if wfitform.value == 'Linear':
+            formflag=1
+        elif wfitform.value == 'Quadratic':
+            formflag=2
+        elif wfitform.value == 'Universal Liquid':
+            formflag=3
+            
+        matihed = IM.Material()
+        matihed.ihed.id = waddihedid.value
+        matihed.name = wnewnameihed.value
+        matihed.GetIHED()
+        uparr = np.copy(matihed.ihed.uparr)
+        usarr = np.copy(matihed.ihed.usarr)
+        # fit the nonporous data
+        ind = np.where( (matihed.ihed.uparr > wupminihed.value) & (matihed.ihed.uparr < wupmaxihed.value) & (matihed.ihed.marr == 1.0))[0]
+        if matihed.ihed.matname == 'Ice':
+            ind = np.where( (matihed.ihed.uparr > wupminihed.value) & (matihed.ihed.uparr < wupmaxihed.value) & (matihed.ihed.marr == 1.093))[0]
+        #print('len up, us',len(uparr),len(usarr))
+        #uparr = np.arange(101)/100.*10000 # m/s
+        #usarr = 4000+1.4*uparr # m/s
+        fitparams = IM.FitUsUp(uparr[ind],usarr[ind],formflag=formflag)
+        if len(fitparams) == 1:
+            print('error with fit')
+            return
+        #print('fitform = ',formflag)
+        # BEGIN PLOT HERE
+        fig = plt.figure() # initialize the figure object
+        labelstr=''
+        fitstr = ''
+        upplot = np.sort(uparr[ind])
+        if len(fitparams) == 2:
+            labelstr = 'Primary Linear Hugoniot fit'
+            plt.plot(upplot/1000.,(fitparams[1]+fitparams[0]*upplot)/1000.,label=labelstr)
+            fitstr = str(fitparams[1])+' + '+str(fitparams[0])+' u<sub>p</sub>'
+        elif len(fitparams) == 3:
+            labelstr = 'Quadratic Hugoniot fit'
+            plt.plot(upplot/1000.,(fitparams[2]+fitparams[1]*upplot+fitparams[0]*upplot*upplot)/1000.,label=labelstr)
+            fitstr = str(fitparams[2])+' + '+str(fitparams[1])+' u<sub>p</sub> + '+str(fitparams[0])+' u<sub>p</sub><sup>2</sup>'
+        elif len(fitparams) == 4:
+            plt.plot(upplot/1000.,(fitparams[0]+fitparams[1]*upplot-fitparams[2]*upplot*np.exp(-fitparams[3]*upplot))/1000.,label='Primary UL Hugoniot fit')
+            #  Us = A + B Up − C Up exp(−D Up)
+            fitstr = str(fitparams[0])+' + '+str(fitparams[1])+' u<sub>p</sub> - '+str(fitparams[2])+' u<sub>p</sub> exp(-'+str(fitparams[3])+' u<sub>p</sub>)'
+        #print('Primary Hugoniot parameters c0,s1,s2(or c),d=',matplot.c0,matplot.s1,matplot.s2,matplot.d)
+        plt.scatter(matihed.ihed.uparr[ind]/1.e3,matihed.ihed.usarr[ind]/1.e3,label='IHED data points')
+        plt.xlabel('Particle Velocity (km/s)')
+        plt.ylabel('Shock Velocity (km/s)')
+        plt.title('Material = '+matihed.name+', IHED ID '+str(matihed.ihed.id)+' '+matihed.ihed.matname)
+        plt.legend()
+        plt.close(fig)
+        waddihedinfo.value = 'Fit complete. Only using nonporous points. Number of points = '+str(len(ind))+'.<p> Fit Us = '+fitstr
+        
+        # add the parameters to the matihed object
+        if formflag == 1:
+            matihed.ihed.c0 = fitparams[1] # m/s
+            matihed.ihed.s1 = fitparams[0] # [-]
+            matihed.ihed.s2 = 0. # set to zero to keep variables clean
+            matihed.ihed.d  = 0. # set to zero to keep variables clean
+        elif formflag == 2:
+            matihed.ihed.c0 = fitparams[2] # m/s
+            matihed.ihed.s1 = fitparams[1] # [-]
+            matihed.ihed.s2 = fitparams[0] # (m/s)^-1
+            matihed.ihed.d  = 0. # set to zero to keep variables clean
+        elif formflag == 3: # universal liquid Hugoniot
+            matihed.ihed.c0 = fitparams[0] # m/s
+            matihed.ihed.s1 = fitparams[1] # [-]
+            matihed.ihed.s2 = fitparams[2] # [-]
+            matihed.ihed.d  = fitparams[3] # (m/s)^-1              
+        matihed.c0 = matihed.ihed.c0
+        matihed.s1 = matihed.ihed.s1
+        matihed.s2 = matihed.ihed.s2
+        matihed.d  = matihed.ihed.d
+        matihed.rho0 = matihed.ihed.rho0
+        matihed.g0  = wg0ihed.value
+        matihed.q  = wqihed.value
+        return fig
+        
+    wfitihedbutton.on_click(on_fitihedbutton_clicked)
+    wfig_fitihed=pn.panel(on_fitihedbutton_clicked, sizing_mode='scale_width') # panel to display the impedance match plot
+    
+    def on_addihedbutton_clicked(event):
+        print('CLICKED ADD BUTTON')
+        # somebody please tell me the better way to access these variables in a button function....
+        global matdata, matihed
+        # load an empty new material parameter DataFrame
+        # Columns must match the original materials-data.csv file    
+        newmatdata, imat = IM.ReadMaterials(matfilename='materials-new.csv')
+        newmatdata.iloc[:,imat.name] = matihed.name
+        newmatdata.iloc[:,imat.rho0] = matihed.rho0
+        newmatdata.iloc[:,imat.c0] = matihed.c0
+        newmatdata.iloc[:,imat.s1] = matihed.s1
+        newmatdata.iloc[:,imat.s2] = matihed.s2
+        newmatdata.iloc[:,imat.d] = matihed.d
+        newmatdata.iloc[:,imat.g0] = matihed.g0
+        newmatdata.iloc[:,imat.q] = matihed.q
+        newmatdata.iloc[:,imat.ihed] = matihed.ihed.id
+        newmatdata.iloc[:,imat.note] = 'IM Tool IHED Fit and Add'
+        dt = datetime.now()        
+        newmatdata.iloc[:,imat.date] = dt.strftime('%Y-%m-%d')
+        matdata = pd.concat([newmatdata,matdata],ignore_index=True)
+        # update all the material listings
+        wdf_widget.value = matdata
+        ab_materials = list(matdata.loc[:,'Material'].values)
+        ab_materials.insert(0, 'Choose material')   # empty material at the top of the list
+        wmat1.options=ab_materials
+        wmat2.options=ab_materials
+        bc_materials = list(matdata.loc[:,'Material'].values)
+        bc_materials.insert(0, 'Choose material/nomaterial')   # empty material at the top of the list
+        wmat3.options=bc_materials
+        wmat4.options=bc_materials
+        all_materials = list(matdata.loc[:,'Material'].values)
+        wmat_drop.options=all_materials
+        wmat_ihed.options=all_materials
+    
+    waddihedbutton = pn.widgets.Button(name='Add IHED Fit to Material Database', button_type='primary')
+    waddihedbutton.on_click(on_addihedbutton_clicked)
+
+    waddihed_column = pn.Column(waddihedtext,wnewnameihed,waddihedid,wupminihed,wupmaxihed,wg0ihed,wqihed,wfitform,wfitihedbutton,waddihedinfo,wfig_fitihed,waddihedbutton,sizing_mode="scale_width")
+
+    #-----------------------------------------------------------------------------
+
     # author into at bottom of app
-    wauthortext = pn.widgets.StaticText(value='v1.1.1 &#169; 2022 S. T. Stewart, Planetary Impacts Community Wiki')
+    wauthortext = pn.widgets.StaticText(value='v1.2.0 &#169; 2022 S. T. Stewart, Planetary Impacts Community Wiki')
 
     # collect the various parts of the web app
     wtop_pane = pn.pane.PNG('PetaviusLangrenus_Poupeau_3000.png',link_url="https://impacts.wiki",sizing_mode="scale_width")
@@ -553,10 +707,11 @@ def IM_app(webappbool=False):
     wmain_pane = pn.Row(wcolumn1,wplotcolumn,sizing_mode="scale_width")
     wmatdata_pane = pn.Card(wdf_widget, title="Materials Database", sizing_mode='scale_width', collapsed=True)
     waddmat_pane = pn.Card(wnewparams, title="Add or Remove Material", sizing_mode='scale_width', collapsed=True)
+    wquickaddihed_pane = pn.Card(waddihed_column, title="Quick Fit and Add IHED Material", sizing_mode='scale_width', collapsed=True)
 
     # ability to plot Hugoniot expressions with IHED data coming.....
     wplot_mat_pane = pn.Card(wplot_mat, title="Plot Material", sizing_mode='scale_width', collapsed=True)    
-    wcombo_pane = pn.Column(wtop_pane,wmain_pane,wbottomtext,wmatdata_pane,waddmat_pane,wplot_mat_pane,pn.layout.Divider(),wauthortext,width=1200,sizing_mode="scale_width")
+    wcombo_pane = pn.Column(wtop_pane,wmain_pane,wbottomtext,wmatdata_pane,waddmat_pane,wplot_mat_pane,wquickaddihed_pane,pn.layout.Divider(),wauthortext,width=1200,sizing_mode="scale_width")
     # final combined app 
     #wcombo_pane = pn.Column(wtop_pane,wmain_pane,wbottomtext,wmatdata_pane,waddmat_pane,pn.layout.Divider(),wauthortext,width=1200,sizing_mode="scale_width")
     

@@ -11,7 +11,8 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 import os
 #
-__version__ = '1.1.1' # November 19, 2022 Debug MG release E,V calc
+__version__ = '1.2.0' # November 20, 2022 Added Hugoniot fit function for IHED quick fit and add
+#__version__ = '1.1.1' # November 19, 2022 Debug MG release E,V calc
 #__version__ = '1.1.0' # November 19, 2022 Added IM_match function; lots of debugging and error messaging.
 #__version__ = '1.0.4' # November 14, 2022 Debugging.
 #__version__ = '1.0.3' # November 13, 2022 Fixed symmetric impact bug; code cleanup and documentation.
@@ -1037,6 +1038,52 @@ def ReadMaterials(matfilename='materials-data.csv'):
     matdata['Date'] = matdata['Date'].astype(str)
     matdata['Notes'] = matdata['Notes'].astype(str)
     return matdata, imat # DataFrame of csv file and MaterialIndices object that defines the columns of the DF
+
+def FitUsUp(uparr,usarr,formflag=1,upmin=0.,upmax=1.e99):
+    """ Fits particle velocity-shock velocity data with a Hugoniot form.
+        Usage: fitparams = FitUsUp(uparr,usarr,formflag=1,upmin=0.,upmax=1.e99)
+        Dependencies: UniversalHugoniot function for scipy curve_fit.
+        Inputs: particle velocity numpy array, shock velocity numpy array
+        Optional: formflag = 1 (default), 2, 3
+         1 is line Us = c0 + s1 * up
+         2 is quadratic Us = c0 + s1 * up + s2 * up^2
+         3 is modified universal liquid equation Us = A + B Up − C Up exp(−D Up)
+        Optional: upmin, upmax range for fit
+        Returns: array fitparams
+            length 2 for line [s1,c0]
+            length 3 for quadratic [s2,s2,c0]
+            length 4 for universal hugoniot [c0,s1,c,d] [bogus values if curve_fit fails]
+            length 1 = [-1] for error
+        Currently not returning covariance matrices; can be added later.
+    """    
+    # check validity of formflag for the Hugoniot fit
+    if formflag not in [1,2,3]:
+        # must be 1 or 2 or 3. 
+        # 1 is line Us = c0 + s1 * up
+        # 2 is quadratic Us = c0 + s1 * up + s2 * up^2
+        # 3 is modified universal liquid equation Us = A + B Up − C Up exp(−D Up)
+        #      A = c0 B=s1 C=s2, D=D material parameters
+        print('Hugoniot flag=',formflag)            
+        print('Hugoniot forms can only be line (1) or quadratic (2) or universal Hugoniot (3).')
+        return [-1]
+    # check validity of uparr and usarr
+    if len(uparr) != len(usarr):
+        print('Particle velocity and shock velocity arrays must be the same length.')
+        return [-1]
+    # check that there are enough points to fit
+    ind = np.where((uparr > upmin) & (uparr < upmax))[0]
+    if len(ind) < 3:
+        print('There are not enough points to fit.')
+        return [-1]
+    # fit polynomial    
+    if formflag in [1,2]:
+        # line or quadratic
+        fitparams = np.polyfit(uparr[ind],usarr[ind],formflag) # mks
+    if formflag == 3:
+        # curve fit to universal liquid Hugoniot
+        p0=[min(usarr),1.2,2.,.3e-3] # curve_fit needs an initial guess to converge 
+        fitparams, con = curve_fit(UniversalHugoniot, uparr[ind], usarr[ind],p0=p0)
+    return fitparams
 
 #==================================================================================================
 #### INTERSECTION FUNCTION FROM https://github.com/sukhbinder/intersection/
