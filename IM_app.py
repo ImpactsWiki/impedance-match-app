@@ -178,7 +178,7 @@ def IM_app(webappbool=False):
                 if wusemgmodel.value and (mat2.rho0 < 5000):
                     # if using MG model, increase the length of the particle velocity array
                     uparr_factor = 5. # make up arrays up to impvel_factor*vel 
-                    uparr_length = 5000. # number of points (resolution) of the up array
+                    uparr_length = 1000. # number of points (resolution) of the up array
                     upmat2 = np.arange(0,uparr_length+1)/uparr_length*vel*uparr_factor # m/s
                 else:
                     upmat2 = np.copy(upgeneral)
@@ -197,7 +197,7 @@ def IM_app(webappbool=False):
                 if wusemgmodel.value and (mat3.rho0 < 5000):
                     # if using MG model, increase the length of the particle velocity array
                     uparr_factor = 5. # make up arrays up to impvel_factor*vel 
-                    uparr_length = 5000. # number of points (resolution) of the up array
+                    uparr_length = 1000. # number of points (resolution) of the up array
                     upmat3 = np.arange(0,uparr_length+1)/uparr_length*vel*uparr_factor # m/s
                 else:
                     upmat3 = np.copy(upgeneral)
@@ -220,7 +220,7 @@ def IM_app(webappbool=False):
                 if wusemgmodel.value and (mat4.rho0 < 5000):
                     # if using MG model, increase the length of the particle velocity array
                     uparr_factor = 5. # make up arrays up to impvel_factor*vel 
-                    uparr_length = 5000. # number of points (resolution) of the up array
+                    uparr_length = 1000. # number of points (resolution) of the up array
                     upmat4 = np.arange(0,uparr_length+1)/uparr_length*vel*uparr_factor # m/s
                 else:
                     upmat4 = np.copy(upgeneral)

@@ -493,7 +493,7 @@ class Material:
                 plt.scatter(up2/1000.,us2/1000.,label='User '+self.ihed2.matname)
             else:
                 plt.scatter(up2/1000.,us2/1000.,label='IHED '+self.ihed2.matname)
-        uptmp = np.arange(max(up))
+        uptmp = np.arange(max(up),step=50)
         if d==0:
             plt.plot(uptmp/1000.,(c0+s1*uptmp+s2*uptmp*uptmp)/1000.,label=lab_txt)
             diff = us-(c0+s1*up+s2*up*up)
