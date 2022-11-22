@@ -22,7 +22,7 @@ def IM_app(webappbool=False):
         v1.0.3 - 11/15/22 STS auto-resize the plot; added panel to add a new material
         v1.1.0 - 11/19/22 STS rewrote the IM match into a function and cleaned up error messaging
         v1.2.0 - 11/20/22 STS added quick fit and add IHED material
-        v1.2.1 - 11/20/22 STS reduced memory for Heroku up arrays 500, 1000
+        v1.2.1 - 11/22/22 STS webappbool flag for Hugoniot array lengths
     """
     #========================================================
     # WIDGET SETTINGS & CUSTOMIZATIONS
@@ -115,7 +115,7 @@ def IM_app(webappbool=False):
         wcolumn1 = pn.Column('## Shock Impedance Match Tool\nSelect 2 or more materials and impact velocity<br>Changing impact velocity updates the plot.', wmat1, wmat2, wmat3, wmat4, wvel, wshowdata, wuselocaldata, wusemgmodel, wpmax, wupmax,wsaveimage, width=menuwidth)
 
     @pn.depends(vel=wvel,usemgmodel=wusemgmodel,showdata=wshowdata,pmax=wpmax,upmax=wupmax)
-    def match_and_plot(vel,usemgmodel,showdata,pmax,upmax): 
+    def match_and_plot(vel,usemgmodel,showdata,pmax,upmax,webappbool=webappbool): 
         # usemgmodel and showdata and pmax are function parameters to trigger redraw of plot
         # the code below accesses the widget values directly
         vel = vel*1.e3 # put impact velocity in m/s
@@ -147,7 +147,11 @@ def IM_app(webappbool=False):
             #
             # generic settings -- increase for MG model and low density materials if needed below
             uparr_factor = 2. # make up arrays up to impvel_factor*vel 
-            uparr_length = 500 # number of points (resolution) of the up array
+            if webappbool:
+                uparr_length = 500 # small memory limit for web app
+            else:
+                uparr_length = 2000
+            #uparr_length = 2000 # number of points (resolution) of the up array
             upgeneral = np.arange(0,uparr_length+1)/uparr_length*vel*uparr_factor # m/s
 
             # INITIALIZE MATERIALS FROM DROPDOWN MENUS
@@ -159,7 +163,11 @@ def IM_app(webappbool=False):
                 if wusemgmodel.value and (mat1.rho0 < 5000):
                     # if using MG model, increase the length of the particle velocity array
                     uparr_factor = 5. # make up arrays up to impvel_factor*vel 
-                    uparr_length = 1000. # number of points (resolution) of the up array
+                    if webappbool:
+                        uparr_length = 1000 # small memory limit for web app
+                    else:
+                        uparr_length = 5000
+                    #uparr_length = 5000. # number of points (resolution) of the up array
                     upmat1 = np.arange(0,uparr_length+1)/uparr_length*vel*uparr_factor # m/s
                 else:
                     upmat1 = np.copy(upgeneral) # each material is an independent set of arrays
@@ -178,7 +186,10 @@ def IM_app(webappbool=False):
                 if wusemgmodel.value and (mat2.rho0 < 5000):
                     # if using MG model, increase the length of the particle velocity array
                     uparr_factor = 5. # make up arrays up to impvel_factor*vel 
-                    uparr_length = 1000. # number of points (resolution) of the up array
+                    if webappbool:
+                        uparr_length = 1000 # small memory limit for web app
+                    else:
+                        uparr_length = 5000
                     upmat2 = np.arange(0,uparr_length+1)/uparr_length*vel*uparr_factor # m/s
                 else:
                     upmat2 = np.copy(upgeneral)
@@ -197,7 +208,10 @@ def IM_app(webappbool=False):
                 if wusemgmodel.value and (mat3.rho0 < 5000):
                     # if using MG model, increase the length of the particle velocity array
                     uparr_factor = 5. # make up arrays up to impvel_factor*vel 
-                    uparr_length = 1000. # number of points (resolution) of the up array
+                    if webappbool:
+                        uparr_length = 1000 # small memory limit for web app
+                    else:
+                        uparr_length = 5000
                     upmat3 = np.arange(0,uparr_length+1)/uparr_length*vel*uparr_factor # m/s
                 else:
                     upmat3 = np.copy(upgeneral)
@@ -220,7 +234,10 @@ def IM_app(webappbool=False):
                 if wusemgmodel.value and (mat4.rho0 < 5000):
                     # if using MG model, increase the length of the particle velocity array
                     uparr_factor = 5. # make up arrays up to impvel_factor*vel 
-                    uparr_length = 1000. # number of points (resolution) of the up array
+                    if webappbool:
+                        uparr_length = 1000 # small memory limit for web app
+                    else:
+                        uparr_length = 5000
                     upmat4 = np.arange(0,uparr_length+1)/uparr_length*vel*uparr_factor # m/s
                 else:
                     upmat4 = np.copy(upgeneral)
@@ -373,6 +390,7 @@ def IM_app(webappbool=False):
                 userinfostr = userinfostr + ' Mie-Grueneisen model for reshock and release.'
             else:
                 userinfostr = userinfostr + ' Hugoniot for reshock and release.'
+            #userinfostr = userinfostr + ' '+str(len(mat1.hug.uparr))+' '+str(len(mat2.hug.uparr))+' '
             winfo.value = '<p>Impact velocity '+IM.ClStr(vel/1.e3)+' (km/s).'+userinfostr+string_IM_res+'<p>IM Tool v'+IM.__version__
             plt.close(fig)
             return fig
@@ -653,6 +671,8 @@ def IM_app(webappbool=False):
         matihed.rho0 = matihed.ihed.rho0
         matihed.g0  = wg0ihed.value
         matihed.q  = wqihed.value
+        matihed.uplow = min(uparr[ind])
+        matihed.uphigh = max(uparr[ind])
         return fig
         
     wfitihedbutton.on_click(on_fitihedbutton_clicked)
@@ -673,6 +693,8 @@ def IM_app(webappbool=False):
         newmatdata.iloc[:,imat.d] = matihed.d
         newmatdata.iloc[:,imat.g0] = matihed.g0
         newmatdata.iloc[:,imat.q] = matihed.q
+        newmatdata.iloc[:,imat.uplow] = matihed.uplow
+        newmatdata.iloc[:,imat.uphigh] = matihed.uphigh
         newmatdata.iloc[:,imat.ihed] = matihed.ihed.id
         newmatdata.iloc[:,imat.note] = 'IM Tool IHED Fit and Add'
         dt = datetime.now()        
@@ -700,23 +722,25 @@ def IM_app(webappbool=False):
     #-----------------------------------------------------------------------------
 
     # author into at bottom of app
-    wauthortext = pn.widgets.StaticText(value='v1.2.0 &#169; 2022 S. T. Stewart, Planetary Impacts Community Wiki')
+    wauthortext = pn.widgets.StaticText(value='v1.2.1 &#169; 2022 S. T. Stewart, Planetary Impacts Community Wiki')
 
+    #-----------------------------------------------------------------------------
+    #-----------------------------------------------------------------------------
     # collect the various parts of the web app
     wtop_pane = pn.pane.PNG('PetaviusLangrenus_Poupeau_3000.png',link_url="https://impacts.wiki",sizing_mode="scale_width")
     wplotcolumn = pn.Column(wplot,winfo,sizing_mode="scale_width")
     wmain_pane = pn.Row(wcolumn1,wplotcolumn,sizing_mode="scale_width")
     wmatdata_pane = pn.Card(wdf_widget, title="Materials Database", sizing_mode='scale_width', collapsed=True)
     waddmat_pane = pn.Card(wnewparams, title="Add or Remove Material", sizing_mode='scale_width', collapsed=True)
-    wquickaddihed_pane = pn.Card(waddihed_column, title="Quick Fit and Add IHED Material", sizing_mode='scale_width', collapsed=True)
-
-    # ability to plot Hugoniot expressions with IHED data coming.....
     wplot_mat_pane = pn.Card(wplot_mat, title="Plot Material", sizing_mode='scale_width', collapsed=True)    
+    wquickaddihed_pane = pn.Card(waddihed_column, title="Quick Fit and Add IHED Material", sizing_mode='scale_width', collapsed=True)
     wcombo_pane = pn.Column(wtop_pane,wmain_pane,wbottomtext,wmatdata_pane,waddmat_pane,wplot_mat_pane,wquickaddihed_pane,pn.layout.Divider(),wauthortext,width=1200,sizing_mode="scale_width")
     # final combined app 
     #wcombo_pane = pn.Column(wtop_pane,wmain_pane,wbottomtext,wmatdata_pane,waddmat_pane,pn.layout.Divider(),wauthortext,width=1200,sizing_mode="scale_width")
     
     return wcombo_pane
+    #-----------------------------------------------------------------------------
+    #-----------------------------------------------------------------------------
 
 ## this function creates a panel app that can be run as a standalone app in a web browser using
 ## IM_app(matdata,imat)
