@@ -11,7 +11,8 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 import os
 #
-__version__ = '1.2.1' # November 21, 2022 Fixed MakeMGIsentrope and PlotCurves
+__version__ = '1.2.2' # November 21, 2022 Fixed release state E and V for im2 points
+#__version__ = '1.2.1' # November 21, 2022 Fixed MakeMGIsentrope and PlotCurves
 #__version__ = '1.2.0' # November 20, 2022 Added Hugoniot fit function for IHED quick fit and add
 #__version__ = '1.1.1' # November 19, 2022 Debug MG release E,V calc
 #__version__ = '1.1.0' # November 19, 2022 Added IM_match function; lots of debugging and error messaging.
@@ -929,8 +930,8 @@ class Material:
                     self.im2.up=res_release[0][0] # m/s
                     self.im2.p=res_release[1][0] # Pa
                     ind = np.where(self.isen.varr > 0)[0]
-                    self.im2.v=1./(np.interp(res_release[0],2*self.im1.up-self.isen.uparr[ind],1./self.isen.varr[ind])[0]) # assumes f is monotonic and increasing
-                    self.im2.e=np.interp(res_release[0],2*self.im1.up-self.isen.uparr,self.isen.earr)[0] # assumes f is monotonic and increasing
+                    self.im2.v=1./(np.interp(res_release[0],np.flip(2*self.im1.up-self.isen.uparr[ind]),np.flip(1./self.isen.varr[ind]))[0]) # assumes f is monotonic and increasing
+                    self.im2.e=np.interp(res_release[0],np.flip(2*self.im1.up-self.isen.uparr),np.flip(self.isen.earr))[0] # assumes f is monotonic and increasing
                     matb.im1.up=res_release[0][0]
                     matb.im1.p=res_release[1][0]
                     matb.im1.v=1./(np.interp(res_release[0],matb.hug.uparr,1./matb.hug.varr)[0]) # assumes f is monotonic and increasing
