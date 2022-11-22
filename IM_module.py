@@ -11,7 +11,8 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 import os
 #
-__version__ = '1.2.0' # November 20, 2022 Added Hugoniot fit function for IHED quick fit and add
+__version__ = '1.2.1' # November 21, 2022 Fixed MakeMGIsentrope and PlotCurves
+#__version__ = '1.2.0' # November 20, 2022 Added Hugoniot fit function for IHED quick fit and add
 #__version__ = '1.1.1' # November 19, 2022 Debug MG release E,V calc
 #__version__ = '1.1.0' # November 19, 2022 Added IM_match function; lots of debugging and error messaging.
 #__version__ = '1.0.4' # November 14, 2022 Debugging.
@@ -493,7 +494,7 @@ class Material:
                 plt.scatter(up2/1000.,us2/1000.,label='User '+self.ihed2.matname)
             else:
                 plt.scatter(up2/1000.,us2/1000.,label='IHED '+self.ihed2.matname)
-        uptmp = np.arange(max(up),step=50)
+        uptmp = np.arange(max(up))
         if d==0:
             plt.plot(uptmp/1000.,(c0+s1*uptmp+s2*uptmp*uptmp)/1000.,label=lab_txt)
             diff = us-(c0+s1*up+s2*up*up)
@@ -583,6 +584,7 @@ class Material:
             Returns: successful calculation boolean
         """
         MGIsuccess=False
+        MGIdebug=False
         #Must create Hugoniot first
         if len(self.hug.parr) <= 10:
             MGIsuccess=False
@@ -615,104 +617,80 @@ class Material:
         self.isen.uparr2 = np.zeros(len(self.hug.varr))
         self.isen.garr = np.copy(self.hug.garr)
         # calc for volumes on release
-        #print('istart,v,p,up,e=',istart,pstart.v,pstart.p/1.e9,pstart.up/1.e3,pstart.e)
+        if MGIdebug: print('istart,v,p,up,e=',istart,pstart.v,pstart.p/1.e9,pstart.up/1.e3,pstart.e)
         #with open('log.txt', 'a') as fp: # debugging
         #    fp.write('pstart='+str(pstart.p)+' = '+str(self.hug.parr[istart])+'\n')
         #    fp.write('vstart='+str(pstart.v)+' = '+str(self.hug.varr[istart])+'\n')
         for i in range(istart-1,-1,-1):
             if i == istart-1:
-                dv = (self.isen.varr[i]-pstart.v)
-                print('istart down dv, startup = ',dv,pstart.up,self.isen.uparr[istart])
+                dv = (self.isen.varr[i]-pstart.v) # positive means expansion
+                if MGIdebug: print('istart down dv, pstart.up, hugP[istart], hugP[istart-1] = ',dv,pstart.up/1.e3,self.hug.parr[i]/1.e9,self.hug.parr[i-1]/1.e9)
                 # check for roundoff errors for symmetric impact
-                print('impvel, up/impvel', impvel, ((2*pstart.up/impvel)))
-                if (dv <= 0) or ((abs(2*pstart.up/impvel)-1)<1.e-5): 
+                if MGIdebug: print('impvel, up/impvel', impvel, ((2*pstart.up/impvel)))
+#                if (dv <= 0) or ((abs(2*pstart.up/impvel)-1)<1.e-5): 
+                if ((abs(2*pstart.up/impvel)-1)<1.e-5): 
                     # sometimes dv is a very tiny number; not catching positive tiny right now
                     # up vs impvel check is because there are floating precision problems
                     # case of symmetric impact messing up the math
-                    print('symmetric i=',i)
+                    if MGIdebug: print('***symmetric i=',i)
                     self.isen.parr[i] = np.copy(pstart.p)
                     self.isen.earr[i] = np.copy(pstart.e)
                     self.isen.uparr[i]= np.copy(pstart.up)
                     self.isen.uparr2[i]= np.copy(pstart.up)
-                    print('symm up = ',self.isen.uparr[i],self.isen.uparr2[i])
+                    #print('symm up = ',self.isen.uparr[i],self.isen.uparr2[i])
                 else:
-                    self.isen.parr[i] = (self.hug.parr[i]-(self.hug.earr[i]-pstart.e+pstart.p*dv/2.)*(self.hug.garr[i]/self.hug.varr[i])) / (1.-dv*self.hug.garr[i]/self.hug.varr[i]/2.)
-                    self.isen.earr[i] = pstart.e-(pstart.p+self.isen.parr[i])*dv/2.
+                    if MGIdebug: print('not symmetric',i,(self.isen.garr[i]/self.isen.varr[i])*(pstart.e-self.hug.earr[i]-0.5*pstart.p*dv))
+                    self.isen.parr[i] = (self.hug.parr[i]+(self.isen.garr[i]/self.isen.varr[i])*(pstart.e-self.hug.earr[i]-0.5*pstart.p*dv)) / (1.+0.5*dv*self.hug.garr[i]/self.hug.varr[i])
+                    self.isen.earr[i] = pstart.e-0.5*(pstart.p+self.isen.parr[i])*dv
                     if (-(pstart.p-self.isen.parr[i])/(pstart.v-self.isen.varr[i])) > 0:
                         # no sqrt of negative numbers
                         self.isen.uparr[i]= pstart.up-(pstart.p-self.isen.parr[i])/np.sqrt(-(pstart.p-self.isen.parr[i])/(pstart.v-self.isen.varr[i]))
                         self.isen.uparr2[i]= pstart.up-(pstart.p-self.isen.parr[i])/np.sqrt(-(pstart.p-self.isen.parr[i])/(pstart.v-self.isen.varr[i]))
-                        print('what is up with up1, up2 = ',self.isen.uparr[i],self.isen.uparr2[i])
+                        #print('what is up with up1, up2 = ',self.isen.uparr[i],self.isen.uparr2[i])
+                    #print('down: ',i,dv,self.isen.parr[i]/1.e9,self.hug.parr[i]/1.e9,self.isen.earr[i]/1.e6)
             else: # not the first step on the release
-                dv = (self.isen.varr[i]-self.isen.varr[i+1])
+                dv = (self.isen.varr[i]-self.isen.varr[i+1]) # expanding positive
+                #if MGIdebug: print('down i+1: ',i+1,dv,self.isen.parr[i+1]/1.e9,self.isen.earr[i+1]/1.e6)
                 #print('istart down rest dv = ',dv)
-                gov = self.isen.garr[i]/self.isen.varr[i]
-                self.isen.parr[i] = (self.hug.parr[i]-(self.hug.earr[i]-self.isen.earr[i+1]+self.isen.parr[i+1]*dv/2.)*(self.hug.garr[i]/self.hug.varr[i])) / (1.-dv*self.hug.garr[i]/self.hug.varr[i]/2.)
+                self.isen.parr[i] = (self.hug.parr[i]+(self.isen.garr[i]/self.isen.varr[i])*(self.isen.earr[i+1]-self.hug.earr[i]-0.5*self.isen.parr[i+1]*dv)) / (1.+0.5*dv*self.isen.garr[i]/self.isen.varr[i])
                 self.isen.earr[i] = self.isen.earr[i+1]-(self.isen.parr[i+1]+self.isen.parr[i])*dv/2.
                 if (-(self.isen.parr[i+1]-self.isen.parr[i])/(self.isen.varr[i+1]-self.isen.varr[i])) > 0:
                     # no sqrt of negative numbers
                     # these two equations for Uparr are identical along an isentrope
                     self.isen.uparr[i]= self.isen.uparr[i+1]-(self.isen.parr[i+1]-self.isen.parr[i])/np.sqrt(-(self.isen.parr[i+1]-self.isen.parr[i])/(self.isen.varr[i+1]-self.isen.varr[i]))
                     self.isen.uparr2[i]= self.isen.uparr2[i+1]-np.sqrt(-(self.isen.parr[i+1]-self.isen.parr[i])*(self.isen.varr[i+1]-self.isen.varr[i]))
-                    #print('down side i, up1, up2, dv = ',i,self.isen.uparr[i],self.isen.uparr2[i],dv)
+                    #if MGIdebug: print('down side i, up1, up2, dv = ',i,self.isen.uparr[i],self.isen.uparr2[i],dv)
                 else:
                     self.isen.uparr[i]= self.isen.uparr[i+1]
                     self.isen.uparr2[i]= self.isen.uparr2[i+1]
-                    print('check negative i up1 up2 dv = ',i,self.isen.uparr[i],self.isen.uparr2[i],dv)
-
+                    if MGIdebug: print('check negative i up1 up2 dv = ',i,self.isen.uparr[i],self.isen.uparr2[i],dv)
+                if MGIdebug: print('down: ',i,dv,self.isen.parr[i]/1.e9,self.hug.parr[i]/1.e9,self.isen.earr[i]/1.e6)
             #print(i,dv,self.isen.parr[i]/1.e9,self.isen.uparr[i]/1.e3,self.isen.earr[i])
         # calc for greater volumes for plotting purposes
         for i in range(istart,len(self.hug.parr)):
-            if i == istart:
-                dv = (pstart.v-self.isen.varr[i]) # check this!
-                print('istart up dv = ',i,dv)
-                print('upside impvel, up/impvel', impvel, ((2*pstart.up/impvel)))
-#                if dv<=0: # sometimes a very tiny number; not catching positive tiny right now
-                if (dv <= 0) or ((abs(2*pstart.up/impvel)-1)<1.e-5): 
-                    # sometimes dv is a very tiny number; not catching positive tiny right now
-                    # up vs impvel check is because there are floating precision problems
-                    # case of symmetric impact messing up the math
-                    print('symmetric i=',i)
-                    # symmetric case check
-                    self.isen.parr[i] = pstart.p
-                    self.isen.earr[i] = pstart.e
-                    self.isen.uparr[i]= pstart.up
-                    self.isen.uparr2[i]= pstart.up
-                else:  
-                    self.isen.parr[i] = (self.hug.parr[i]-(self.hug.earr[i]-pstart.e+pstart.p*dv/2.)*(self.hug.garr[i]/self.hug.varr[i])) / (1.-dv*self.hug.garr[i]/self.hug.varr[i]/2.)
-                    self.isen.earr[i] = pstart.e-(pstart.p+self.isen.parr[i])*dv/2.
-                    if (-(pstart.p-self.isen.parr[i])/(pstart.v-self.isen.varr[i])) > 0:
-                        # no sqrt of negative numbers
-                        self.isen.uparr[i]= pstart.up-(pstart.p-self.isen.parr[i])/np.sqrt(-(pstart.p-self.isen.parr[i])/(pstart.v-self.isen.varr[i]))
-                        self.isen.uparr2[i]= pstart.up-(pstart.p-self.isen.parr[i])/np.sqrt(-(pstart.p-self.isen.parr[i])/(pstart.v-self.isen.varr[i]))
+            dv = (self.isen.varr[i]-self.isen.varr[i-1]) # now negative going to greater compression
+            #print('istart up rest dv = ',i,dv)
+            self.isen.parr[i] = (self.hug.parr[i]+(self.isen.garr[i]/self.isen.varr[i])*(self.isen.earr[i-1]-self.hug.earr[i]-0.5*self.isen.parr[i-1]*dv)) / (1.+0.5*dv*self.isen.garr[i]/self.isen.varr[i])
+            self.isen.earr[i] = self.isen.earr[i-1]-0.5*(self.isen.parr[i-1]+self.isen.parr[i])*dv
+            if (-(self.isen.parr[i-1]-self.isen.parr[i])/(self.isen.varr[i-1]-self.isen.varr[i])) > 0:
+                # no sqrt of negative numbers
+                # these two equations for Uparr are identical along an isentrope
+                self.isen.uparr[i]= self.isen.uparr[i-1]-(self.isen.parr[i-1]-self.isen.parr[i])/np.sqrt(-(self.isen.parr[i-1]-self.isen.parr[i])/(self.isen.varr[i-1]-self.isen.varr[i]))
+                self.isen.uparr2[i]= self.isen.uparr2[i-1]+np.sqrt(-(self.isen.parr[i-1]-self.isen.parr[i])*(self.isen.varr[i-1]-self.isen.varr[i]))
             else:
-                dv = -(self.isen.varr[i]-self.isen.varr[i-1])
-                #print('istart up rest dv = ',i,dv)
-                self.isen.parr[i] = (self.hug.parr[i]-(self.hug.earr[i]-self.isen.earr[i-1]+self.isen.parr[i-1]*dv/2.)*(self.hug.garr[i]/self.hug.varr[i])) / (1.-dv*self.hug.garr[i]/self.hug.varr[i]/2.)
-                self.isen.earr[i] = self.isen.earr[i-1]+(self.isen.parr[i-1]+self.isen.parr[i])*dv/2.
-#                if ((self.isen.parr[i-1]-self.isen.parr[i])/(self.isen.varr[i-1]-self.isen.varr[i])) > 0:
-#                    # no sqrt of negative numbers
-#                    # these two equations for Uparr are identical along an isentrope
-#                    self.isen.uparr[i]= self.isen.uparr[i-1]-(self.isen.parr[i-1]-self.isen.parr[i])/np.sqrt((self.isen.parr[i-1]-self.isen.parr[i])/(self.isen.varr[i-1]-self.isen.varr[i]))
-#                    self.isen.uparr2[i]= self.isen.uparr2[i-1]+np.sqrt((self.isen.parr[i-1]-self.isen.parr[i])*(self.isen.varr[i-1]-self.isen.varr[i]))
-                if (-(self.isen.parr[i-1]-self.isen.parr[i])/(self.isen.varr[i-1]-self.isen.varr[i])) > 0:
-                    # no sqrt of negative numbers
-                    # these two equations for Uparr are identical along an isentrope
-                    self.isen.uparr[i]= self.isen.uparr[i-1]-(self.isen.parr[i-1]-self.isen.parr[i])/np.sqrt(-(self.isen.parr[i-1]-self.isen.parr[i])/(self.isen.varr[i-1]-self.isen.varr[i]))
-                    self.isen.uparr2[i]= self.isen.uparr2[i-1]+np.sqrt(-(self.isen.parr[i-1]-self.isen.parr[i])*(self.isen.varr[i-1]-self.isen.varr[i]))
-                else:
-                    # MG model is failing at higher pressures; this happens all the time so don't call it a fail
-                    # but instead fill the upper parts of the isentrope with NaNs
-                    print('up side negative sqrt nans i, up(i-1)=',i, self.isen.uparr[i-1])
-                    self.isen.parr[i::] = np.nan
-                    self.isen.earr[i::] = np.nan
-                    self.isen.uparr[i::]= np.nan
-                    self.isen.uparr2[i::]= np.nan
-                    MIGsuccess = True
-                    return MGIsuccess
-            #print(i,dv,self.isen.parr[i]/1.e9,self.isen.uparr[i]/1.e3,self.isen.earr[i])
-            # made it here without crashing; hopefully the arrays are all OK
-            MGIsuccess=True
+                # MG model is failing at higher pressures; this happens all the time so don't call it a fail
+                # but instead fill the upper parts of the isentrope with NaNs
+                #print('up side negative sqrt nans i, up(i-1)=',i, self.isen.uparr[i-1])
+                self.isen.parr[i::] = np.nan
+                self.isen.earr[i::] = np.nan
+                self.isen.uparr[i::]= np.nan
+                self.isen.uparr2[i::]= np.nan
+                MIGsuccess = True
+                return MGIsuccess
+        if MGIdebug: print('up: ',i,dv,self.isen.parr[i]/1.e9,self.hug.parr[i]/1.e9,self.isen.earr[i]/1.e6)    
+        #print(i,dv,self.isen.parr[i]/1.e9,self.isen.uparr[i]/1.e3,self.isen.earr[i])
+        # made it here without crashing; hopefully the arrays are all OK
+        MGIsuccess=True
         return MGIsuccess
     #------------------------------------------------------------------------------------------
     def MakeReshockHug(self,pstart,usemgmodelbool=False):
@@ -748,8 +726,9 @@ class Material:
         self.reshock.uparr = np.zeros(len(self.hug.parr))
         self.reshock.uparr2 = np.zeros(len(self.hug.parr))
         # calc reshock Hugoniot
-        dv = pstart.v-self.reshock.varr[ind]
-        self.reshock.parr[ind] = (self.hug.parr[ind]+(pstart.p-self.hug.parr[ind])*(self.v0-self.reshock.varr[ind])*(self.reshock.garr[ind]/self.reshock.varr[ind]/2))/(1-self.reshock.garr[ind]/self.reshock.varr[ind]/2*(pstart.v-self.reshock.varr[ind]))
+        dv = pstart.v-self.reshock.varr[ind] # V1 - V2
+        #self.reshock.parr[ind] = (self.hug.parr[ind]+(pstart.p-self.hug.parr[ind])*(self.v0-self.reshock.varr[ind])*(self.reshock.garr[ind]/self.reshock.varr[ind]/2))/(1-self.reshock.garr[ind]/self.reshock.varr[ind]/2*(pstart.v-self.reshock.varr[ind]))
+        self.reshock.parr[ind] = (self.hug.parr[ind]+(pstart.p-self.hug.parr[ind])*0.5*(self.reshock.garr[ind]/self.reshock.varr[ind])*(self.v0-self.reshock.varr[ind]))/(1-0.5*self.reshock.garr[ind]/self.reshock.varr[ind]*(pstart.v-self.reshock.varr[ind]))
         self.reshock.earr[ind] = pstart.e+0.5*(self.reshock.parr[ind]+pstart.p)*dv
         # check for bad points
         ind2 = np.where((self.reshock.parr[ind]-pstart.p)*(pstart.v-self.reshock.varr[ind]) > 0)[0]
@@ -779,7 +758,7 @@ class Material:
         MGRsuccess = True # made it to end without crashing
         return MGRsuccess
     #------------------------------------------------------------------------------------------
-    def PlotCurves(self,pstart,savebool=False,fname=''):
+    def PlotCurves(self,pstart,savebool=False,fname='',usegmodelbool=False,impvel=0):
         """ Plot principal Hugoniot and isentropes and reshock Hugoniot from pstart.
             Usage: PlotCurves(self,pstart,savebool=False,fname=''):
             Inputs: initial pressure for isentrope & reshock in Pa.
@@ -803,9 +782,9 @@ class Material:
         self.im1.p=pstart
         self.im1.v=1/np.interp(pstart,self.hug.parr,1/self.hug.varr)
         self.im1.e=np.interp(pstart,self.hug.parr,self.hug.earr)
-        MGIsuccess = self.MakeMGIsentrope(self.im1)
+        MGIsuccess = self.MakeMGIsentrope(self.im1,usemgmodelbool=usegmodelbool,impvel=impvel)
         #print('MGI success flag = ',MGIsuccess)
-        self.MakeReshockHug(self.im1)
+        self.MakeReshockHug(self.im1,usemgmodelbool=usegmodelbool)
         rhomax = np.interp(pstart*3,self.hug.parr,1/self.hug.varr)/1.e3
         rhomin = 0.8*(self.rho0/1.e3)
         #print(rhomax)
@@ -843,16 +822,18 @@ class Material:
         up0 = np.interp(pstart,self.hug.parr,self.hug.uparr)
         ax4.plot(self.hug.uparr/1.e3,self.hug.parr/1.e9,label='Hugoniot')
         if MGIsuccess: 
-            ax4.plot(up0/1.e3+self.isen.uparr/1.e3,self.isen.parr/1.e9,label='Isentrope')
+#2*mat5.im1.up
+            #ax4.plot(up0/1.e3+self.isen.uparr/1.e3,self.isen.parr/1.e9,label='Isentrope')
+            ax4.plot(self.isen.uparr/1.e3,self.isen.parr/1.e9,label='Isentrope')
         #ax4.plot(up0/1.e3+self.isen.uparr2/1.e3,self.isen.parr/1.e9,'--',label='isen2')
-        ax4.plot(up0/1.e3+self.reshock.uparr/1.e3,self.reshock.parr/1.e9,label='Reshock A')
-        ax4.plot(up0/1.e3+self.reshock.uparr2/1.e3,self.reshock.parr/1.e9,'--',label='Reshock B')
+        ax4.plot(self.reshock.uparr/1.e3,self.reshock.parr/1.e9,label='Reshock A')
+        ax4.plot(self.reshock.uparr2/1.e3,self.reshock.parr/1.e9,'--',label='Reshock B')
         ax4.set_ylim([0,pstart*3/1.e9])
         ax4.set_xlim([0,up0*2/1.e3])
         ax4.legend()
         ax4.set_xlabel('Particle Velocity (km/s)')
         ax4.set_ylabel('Pressure (GPa)')
-        #print(mat3.isen.uparr2)
+        #print(impvel/1.e3,self.isen.uparr2/1.e3)
 
         fig.tight_layout()
         if savebool:
@@ -861,8 +842,8 @@ class Material:
                 fname='EOS-plots-'+self.name+'-v'+__version__+'.pdf'
             fig.savefig(fname,dpi=300)
         #plt.show()
-        plt.close(fig)
-        return fig
+        #plt.close(fig)
+        #return fig
     #------------------------------------------------------------------------------------------
     def IM_match(self,matb,vel=0.,pstart=0,usemgmodelbool=False):
         """ Plot principal Hugoniot and isentropes and reshock Hugoniot from pstart.
