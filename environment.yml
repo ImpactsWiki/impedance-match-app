@@ -1,7 +1,12 @@
-numpy  
-matplotlib
-pandas
-scipy
-panel
-jupyterlab
+name: imtools-environment
+channels:
+  - conda-forge
+dependencies:
+  - numpy  
+  - matplotlib
+  - pandas
+  - scipy
+  - panel
+  - jupyterlab
+
 
