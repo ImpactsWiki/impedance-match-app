@@ -8,5 +8,3 @@ dependencies:
   - scipy
   - panel
   - jupyterlab
-
-

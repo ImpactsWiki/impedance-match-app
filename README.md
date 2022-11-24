@@ -1,7 +1,14 @@
 # impedance-match-app
 
-This is a python-based web app served by Heroku at<br>
-https://impedance-match-app.herokuapp.com/
+Options to use this web app:
+
+1. Render or Keroku<br>
+https://impedance-match-app.onrender.com/<br>
+https://impedance-match-app.herokuapp.com/<br>
+
+2. Binder<br>
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/ImpactsWiki/impedance-match-app/main?labpath=impedance_match_app.ipynb)
+https://mybinder.org/v2/gh/ImpactsWiki/impedance-match-app/main?labpath=impedance_match_app.ipynb
 
 The user manual and additional information is available at<br>
 https://impactswiki.net/impact-tools-book/
@@ -16,4 +23,4 @@ https://impacts.wiki
 * Panel package https://panel.holoviz.org/
 
 S. T. Stewart<br>
-November 14, 2022
+Updated November 23, 2022
