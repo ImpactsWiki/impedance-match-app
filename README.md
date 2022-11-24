@@ -1,16 +1,12 @@
 # impedance-match-app
 
-Options to use this web app:
+Options to use this web app:<p>
 
-1. Render or Keroku<br>
-https://impedance-match-app.onrender.com/<br>
-https://impedance-match-app.herokuapp.com/<br>
+* Render https://impedance-match-app.onrender.com/<br>
+* Heroku https://impedance-match-app.herokuapp.com/<br>
+* Binder [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/ImpactsWiki/impedance-match-app/main?labpath=impedance_match_app.ipynb)
 
-2. Binder<br>
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/ImpactsWiki/impedance-match-app/main?labpath=impedance_match_app.ipynb)
-https://mybinder.org/v2/gh/ImpactsWiki/impedance-match-app/main?labpath=impedance_match_app.ipynb
-
-The user manual and additional information is available at<br>
+<p>The user manual and additional information is available at<br>
 https://impactswiki.net/impact-tools-book/
 
 This work supports the Planetary Impacts Community Wiki<br>
